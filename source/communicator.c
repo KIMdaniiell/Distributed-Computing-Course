@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <fcntl.h>
 
 #include "communicator.h"
 
@@ -10,22 +11,55 @@
 struct communicator *init_communicator(size_t N) {
     struct entry *entries = calloc(N * N, sizeof(struct entry));
 
-    int fd_pipes_log = open(pipes_log, O_CREAT | O_RDWR, 0777);
+    int fd_pipes_log = open(pipes_log, O_CREAT | O_RDWR | O_TRUNC, 0777);
 
 
     for (int i = 0; i < N; i++) {
+        printf(" %d)", i);
         for (int j = 0; j < N; j++) {
-            if (i == j)
+            if (i == j) {
+                printf("     [READ=_;WRITE=_]");
                 continue;
+            }
+
+            if (i > j) {
+                struct entry *entry = &entries[i * N + j];
+                printf("     [READ=%d;WRITE=%d]", entry->read_fd, entry->write_fd);
+                continue;
+            }
+
+            // i - transmitter (writes)     [1]
+            // j - receiver (reads)         [0]
+            int pipe_fds_i_to_j[2];
+            int pipe_fds_j_to_i[2];
+            pipe(pipe_fds_i_to_j);
+            pipe(pipe_fds_j_to_i);
 
             struct entry *entry = &entries[i * N + j];
+            struct entry *entry_reverse = &entries[j*N + i];
 
-            pipe(entry->pipe_fd);
+            entry->write_fd = pipe_fds_i_to_j[1];
+            entry->read_fd = pipe_fds_j_to_i[0];
+
+            const int flags_i_to_j = fcntl(entry->read_fd, F_GETFL, 0);
+            fcntl(entry->read_fd, F_SETFL, flags_i_to_j | O_NONBLOCK);
+
+            entry_reverse->write_fd = pipe_fds_j_to_i[1];
+            entry_reverse->read_fd = pipe_fds_i_to_j[0];
+
+            const int flags_j_to_i = fcntl(entry_reverse->read_fd, F_GETFL, 0);
+            fcntl(entry_reverse->read_fd, F_SETFL, flags_j_to_i | O_NONBLOCK);
+
+            printf("     [READ=%d;WRITE=%d]", entry->read_fd, entry->write_fd);
 
             char message[128];
-            int msg_len = sprintf(message, "%d/%d\n", entry->pipe_fd[0], entry->pipe_fd[1]);
+            int msg_len = sprintf(message, "%d/%d\n", pipe_fds_i_to_j[0], pipe_fds_i_to_j[1]);
+            write(fd_pipes_log, message, msg_len);
+
+            msg_len = sprintf(message, "%d/%d\n", pipe_fds_j_to_i[0], pipe_fds_j_to_i[1]);
             write(fd_pipes_log, message, msg_len);
         }
+        printf("\n");
     }
 
     close(fd_pipes_log);
@@ -35,45 +69,23 @@ struct communicator *init_communicator(size_t N) {
     return communicator;
 }
 
-/*void ipc_self_dtr(ipc_self **ipc_p) {
-    if (ipc_p != NULL) {
-        free((*ipc_p)->pipes);
-        free(*ipc_p);
-        *ipc_p = NULL;
-    }
+void close_communicator(struct communicator *communicator) {
+    if (NULL == communicator)
+        return;
+
+    free(communicator->entries);
+    free(communicator);
 }
 
-void ipc_self_set_cur(ipc_self *ipc, local_id cur) { ipc->cur = cur; }
-
-int *get_pipe(ipc_self *ipc, local_id i, local_id j) {
-    return ipc->pipes + 2 * (ipc->n * i + j);
+struct entry *get_entry_to_write(struct communicator *communicator, local_id receiver_id) {
+    int N = communicator->header.N;
+    local_id owner_id = communicator->header.owner_id;
+    return &communicator->entries[N * owner_id + receiver_id];
 }
 
-void ipc_self_pipe_link(ipc_self *ipc) {
-    for (int i = 0; i < ipc->n; ++i) {
-        for (int j = 0; j < ipc->n; ++j) {
-            int *pipe = get_pipe(ipc, i, j);
-            if (i == j) {
-                continue;
-            } else if (i == ipc->cur) {
-                close(pipe[0]);
-            } else if (j == ipc->cur) {
-                int rflags = fcntl(pipe[0], F_GETFL);
-                rflags |= O_NONBLOCK;
-                fcntl(pipe[0], F_SETFL, rflags);
-                close(pipe[1]);
-            } else {
-                close(pipe[0]);
-                close(pipe[1]);
-            }
-        }
-    }
-}
+struct entry *get_entry_to_read(struct communicator *communicator, local_id transmitter_id) {
+    int N = communicator->header.N;
+    local_id owner_id = communicator->header.owner_id;
 
-int ipc_self_wfd(ipc_self *ipc, local_id to) {
-    return get_pipe(ipc, ipc->cur, to)[1];
+    return &communicator->entries[N * owner_id + transmitter_id];
 }
-
-int ipc_self_rfd(ipc_self *ipc, local_id from) {
-    return get_pipe(ipc, from, ipc->cur)[0];
-}*/

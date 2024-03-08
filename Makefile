@@ -4,6 +4,8 @@ BUILD_DIR = build
 SOURCE_DIR = source
 TEST_DIR = test
 
+# clang -std=c99 -Wall -pedantic ./*.c -o ../solution
+
 $(BUILD_DIR)/solution: $(SOURCE_DIR)/main.c
 	@clang -std=c99 -Wall -pedantic $(SOURCE_DIR)/*.c -o $(BUILD_DIR)/solution
 
