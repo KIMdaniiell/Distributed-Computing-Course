@@ -1,0 +1,2 @@
+Process 3 (pid   127, parent   123) has STARTED
+Process 3 has DONE its work

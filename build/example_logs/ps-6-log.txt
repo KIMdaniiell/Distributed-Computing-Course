@@ -1,0 +1,2 @@
+Process 6 (pid   130, parent   123) has STARTED
+Process 6 has DONE its work
