@@ -1,5 +1,4 @@
 #include <stdio.h>
-//#include <unistd.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -9,7 +8,7 @@
 
 
 //#include <sys/types.h>
-//#include <sys/wait.h>
+#include <sys/wait.h>
 
 #include "pa1_starter_code/pa1.h"
 
@@ -48,7 +47,9 @@ void parent_run (int N, pid_t children[]) {
     }
 
     for (int child_count = 0; child_count < N; child_count ++) {
-        waitpid(children[child_count]);
+        int child_status = 0;
+
+        waitpid(children[child_count], &child_status, 0);
         printf("Wait [%d] complete\n", children[child_count]);
     }
 
