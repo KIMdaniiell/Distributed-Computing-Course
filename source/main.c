@@ -1,76 +1,83 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <time.h>
-#include <fcntl.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <getopt.h>
 
-#include "pa1.h"
-#include "common.h"
+
 #include "ipc.h"
+
+#include "logger.h"
 #include "communicator.h"
+#include "messenger.h"
 
-
-int events_log_fd;
-int X;
-struct communicator *communicator;
 
 int get_opt_p(int argc, char **argv);
 
-void parent_run(int N, pid_t children[]);
+void parent_run(pid_t children[]);
 
 void child_run(local_id id);
+
+
+struct communicator *communicator;
+struct logger *logger;
+
+int N;      ///< Число детей        BOTH_USE
+int X;      ///< Число процессов
 
 
 int main(int argc, char **argv) {
     printf("[PARENT] Starting ... PID=[%d]\n", getpid());
 
-    X = get_opt_p(argc, argv);    ///< число детей                                            BOTH_USE
+    /**====---- Init variables ----====**/
+    X = get_opt_p(argc, argv);
     int N = X + 1;
-    pid_t children[X];              ///< список pid детей, для wait в родительском процессе     PARENT_USE
+    pid_t children[X];                              ///< список pid детей, для wait в родительском процессе   PARENT_USE
+    pid_t pid;
+    local_id id = 0;
 
-    events_log_fd = open(events_log, O_CREAT | O_RDWR | O_TRUNC, 0777);
-
+    /**====---- Init communicator ----====**/
     communicator = init_communicator(X + 1);
+    communicator->header.owner_id = id;
     communicator->header.N = N;
 
-    pid_t pid = 0;
+    /**====---- Init logger ----====**/
+    logger = init_logger();
+
+
+    /**====---- BREEDING ----====**/
     for (local_id child_count = 0; child_count < X; child_count++) {
-        local_id child_id = child_count + 1;
+        local_id child_local_id = child_count + 1;
 
         pid = fork();
         if (pid == 0) {
             /* Потомок */
-            communicator->header.owner_id = child_id;
+            communicator->header.owner_id = child_local_id;
+            optimise_communicator(communicator);
 
-            child_run(child_id);
-
+            child_run(child_local_id);
             close_communicator(communicator);
-
             exit(0);
         }
-        printf("[PARENT] Creating child №%d (pid = %d)\n", child_id, pid);
+        printf("[PARENT] Creating child №%d (pid = %d)\n", child_local_id, pid);
         children[child_count] = pid;
     }
 
+    optimise_communicator(communicator);
+    parent_run(children);
 
-    communicator->header.owner_id = 0;
-
-    parent_run(X, children);
-
+    /**====---- Close resources ----====**/
     close_communicator(communicator);
-
-    close(events_log_fd);
+    close_logger(logger);
 
     return 0;
 }
 
-void parent_run(int X, pid_t children[]) {
+void parent_run(pid_t children[]) {
     Message *message = (Message *) calloc(1, MAX_MESSAGE_LEN);
 
     int c;
@@ -101,66 +108,39 @@ void parent_run(int X, pid_t children[]) {
 }
 
 void child_run(local_id id) {
-    char event_message_buffer[64];
-    //    printf("(pid=%d) comm head trans is %d\n", getpid(), communicator->header.owner_id);
+    Message *message = (Message *) calloc(1, MAX_MESSAGE_LEN);
 
-    /**====---- WRITE log messages ----====**/
-    Message *start_message = (Message *) calloc(1, MAX_MESSAGE_LEN);
-    start_message->s_header.s_magic = MESSAGE_MAGIC;
-    start_message->s_header.s_payload_len = MAX_PAYLOAD_LEN;
-    start_message->s_header.s_type = STARTED;
-    start_message->s_header.s_local_time = 0;
+    /**====---- START messages SEND ----====**/
+    do_log_started_fmt(logger, id);
+    init_log_started_fmt_message(message, id);
+    send_multicast(communicator, message);
 
-    int msg_l = sprintf(event_message_buffer, log_started_fmt, id, getpid(), getppid());
-    write(events_log_fd, event_message_buffer, msg_l);
-    sprintf(start_message->s_payload, log_started_fmt, id, getpid(), getppid());
-    send_multicast(communicator, start_message);
-
-
+    /**====---- START messages RECEIVE ----====**/
     for (local_id child_count = 0; child_count < X; child_count++) {
-        Message *got_message = (Message *) calloc(1, MAX_MESSAGE_LEN);
-        local_id child_id = child_count + 1;
-
-        if (child_id == id)
+        local_id child_local_id = child_count + 1;
+        if (child_local_id == id)
             continue;
-
-        int c = -1;
-        while (c != 0) {
-            c = receive(communicator, child_id, got_message);
-        }
-
-    }
-    msg_l = sprintf(event_message_buffer, log_received_all_started_fmt, id);
-    write(events_log_fd, event_message_buffer, msg_l);
-
-
-    Message *done_message = (Message *) calloc(1, MAX_MESSAGE_LEN);
-    done_message->s_header.s_magic = MESSAGE_MAGIC;
-    done_message->s_header.s_payload_len = MAX_PAYLOAD_LEN;
-    done_message->s_header.s_type = DONE;
-    done_message->s_header.s_local_time = 0;
-
-    msg_l = sprintf(event_message_buffer, log_done_fmt, id);
-    write(events_log_fd, event_message_buffer, msg_l);
-    sprintf(done_message->s_payload, log_done_fmt, id);
-    send_multicast(communicator, done_message);
-
-
-    for (local_id child_count = 0; child_count < X; child_count++) {
-        Message *got_message = (Message *) calloc(1, MAX_MESSAGE_LEN);
-        local_id child_id = child_count + 1;
-
-        if (child_id == id)
-            continue;
-
-        int c = -1;
-        while (c != 0) {
-            c = receive(communicator, child_id, got_message);
+        while (0 != receive(communicator, child_local_id, message)) {
+            sleep(1);
         }
     }
-    msg_l = sprintf(event_message_buffer, log_received_all_done_fmt, id);
-    write(events_log_fd, event_message_buffer, msg_l);
+    do_log_received_all_started_fmt(logger, id);
 
+    /**====---- DONE messages SEND ----====**/
+    do_log_done_fmt(logger, id);
+    init_log_done_fmt(message, id);
+    send_multicast(communicator, message);
+
+    /**====---- DONE messages RECEIVE ----====**/
+    for (local_id child_count = 0; child_count < X; child_count++) {
+        local_id child_local_id = child_count + 1;
+        if (child_local_id == id)
+            continue;
+        while (0 != receive(communicator, child_local_id, message)) {
+            sleep(1);
+        }
+    }
+    do_log_received_all_done_fmt(logger, id);
 
     printf("[CHILD] Shutting down... PID=[%d]\n", getpid());
 }

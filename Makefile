@@ -1,4 +1,4 @@
-.PHONY: all run test clean
+.PHONY: all run build test clean
 
 BUILD_DIR = build
 SOURCE_DIR = source
@@ -21,6 +21,8 @@ run: $(BUILD_DIR)/solution
 
 run_no_opt: $(BUILD_DIR)/solution
 	@./$(BUILD_DIR)/solution
+
+build: $(BUILD_DIR)/solution
 
 test: $(BUILD_DIR)/solution_test
 	@./$(BUILD_DIR)/solution_test

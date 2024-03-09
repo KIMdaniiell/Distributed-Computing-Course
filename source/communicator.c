@@ -1,11 +1,7 @@
-#include <stdlib.h>
-
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <fcntl.h>
-
 #include "communicator.h"
+
+
+void close_commutation(struct communicator *communicator, local_id id);
 
 
 struct communicator *init_communicator(size_t N) {
@@ -28,15 +24,13 @@ struct communicator *init_communicator(size_t N) {
                 continue;
             }
 
-            // i - transmitter (writes)     [1]
-            // j - receiver (reads)         [0]
             int pipe_fds_i_to_j[2];
             int pipe_fds_j_to_i[2];
             pipe(pipe_fds_i_to_j);
             pipe(pipe_fds_j_to_i);
 
             struct entry *entry = &entries[i * N + j];
-            struct entry *entry_reverse = &entries[j*N + i];
+            struct entry *entry_reverse = &entries[j * N + i];
 
             entry->write_fd = pipe_fds_i_to_j[1];
             entry->read_fd = pipe_fds_j_to_i[0];
@@ -73,8 +67,26 @@ void close_communicator(struct communicator *communicator) {
     if (NULL == communicator)
         return;
 
+    int owner_id = communicator->header.owner_id;
+
+    close_commutation(communicator, owner_id);
+
     free(communicator->entries);
     free(communicator);
+}
+
+void optimise_communicator(struct communicator *communicator) {
+    int N = communicator->header.N;
+    int owner_id = communicator->header.owner_id;
+
+    printf("%d) ", owner_id);
+    for (local_id i = 0; i < N; i++) {
+        if (i == owner_id)
+            continue;
+
+        close_commutation(communicator, i);
+    }
+    printf("\n");
 }
 
 struct entry *get_entry_to_write(struct communicator *communicator, local_id receiver_id) {
@@ -88,4 +100,23 @@ struct entry *get_entry_to_read(struct communicator *communicator, local_id tran
     local_id owner_id = communicator->header.owner_id;
 
     return &communicator->entries[N * owner_id + transmitter_id];
+}
+
+
+void close_commutation(struct communicator *communicator, local_id id) {
+    if (NULL == communicator)
+        return;
+
+    int N = communicator->header.N;
+
+    for (int i = 0; i < N; i++) {
+        if (i == id)
+            continue;
+
+        struct entry *entry = &communicator->entries[id * N + i];
+        printf(" %d", entry->read_fd);
+        printf(" %d", entry->write_fd);
+        close(entry->read_fd);
+        close(entry->write_fd);
+    }
 }

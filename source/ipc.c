@@ -26,9 +26,14 @@ int send(void *self, local_id dst, const Message *msg) {
 
     int bytes_cnt = write(entry->write_fd, msg, msg->s_header.s_payload_len + sizeof(MessageHeader));
 
-    printf("\t[%d] sends to [%d] with pipe № %d \t%d/%lu\n",
-           communicator->header.owner_id, dst, entry->write_fd, bytes_cnt,
-           msg->s_header.s_payload_len + sizeof(MessageHeader));
+    printf("\t[%02d] sends to [%02d] with pipe № %d \t%d/%lu [H=%lu;P=%d]\n",
+           communicator->header.owner_id,
+           dst,
+           entry->write_fd,
+           bytes_cnt,
+           msg->s_header.s_payload_len + sizeof(MessageHeader),
+           sizeof(MessageHeader),
+           msg->s_header.s_payload_len);
 
     if (bytes_cnt == -1) {
         return -1;
@@ -142,6 +147,7 @@ int receive_any(void *self, Message *msg) {
             ps_id++;
         } else {
             ps_id = 0;
+            sleep(2);
         }
 
         if (ps_id == receiver_id)
