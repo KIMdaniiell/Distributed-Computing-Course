@@ -1,0 +1,7 @@
+./build
+./cmake-build-debug
+./example_logs
+./test
+./.idea
+./source/scratches
+./source/pa1_starter_code
