@@ -3,6 +3,7 @@
 BUILD_DIR = build
 SOURCE_DIR = source
 TEST_DIR = test
+LIB_DIR = libs
 
 # clang -std=c99 -Wall -pedantic ./*.c -o ../solution
 
@@ -25,7 +26,8 @@ run_no_opt: $(BUILD_DIR)/solution
 build: $(BUILD_DIR)/solution
 
 test: $(BUILD_DIR)/solution_test
-	@./$(BUILD_DIR)/solution_test
+	@./$(BUILD_DIR)/solution_test -p 5 1 22 33 44 55
+
 
 clean:
 	@rm ./$(BUILD_DIR)/*
