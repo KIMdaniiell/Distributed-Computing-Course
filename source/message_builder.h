@@ -10,9 +10,9 @@
 #include "banking.h"
 
 
-void build_log_started_msg(Message *new_message, timestamp_t timestamp, local_id id, balance_t balance);
+void build_log_STARTED_msg(Message *new_message, timestamp_t timestamp, local_id id, balance_t balance);
 
-void build_log_done_msg(Message *new_message, timestamp_t timestamp, local_id id, balance_t balance);
+void build_log_DONE_msg(Message *new_message, timestamp_t timestamp, local_id id, balance_t balance);
 
 /*void build_log_received_all_started_msg(Message *new_message, timestamp_t timestamp, local_id id);
 

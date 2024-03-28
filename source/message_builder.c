@@ -3,7 +3,7 @@
 void set_msg_header(Message *new_message, uint16_t magic, int16_t type, uint16_t payload_len, timestamp_t local_time);
 
 
-void build_log_started_msg(Message *new_message, timestamp_t timestamp, local_id id, balance_t balance) {
+void build_log_STARTED_msg(Message *new_message, timestamp_t timestamp, local_id id, balance_t balance) {
     /**====---- Payload building ----====**/
     int msg_l = sprintf(new_message->s_payload, log_started_fmt,
                         timestamp,
@@ -15,7 +15,7 @@ void build_log_started_msg(Message *new_message, timestamp_t timestamp, local_id
     set_msg_header(new_message, MESSAGE_MAGIC, STARTED, msg_l, timestamp);
 }
 
-void build_log_done_msg(Message *new_message, timestamp_t timestamp, local_id id, balance_t balance) {
+void build_log_DONE_msg(Message *new_message, timestamp_t timestamp, local_id id, balance_t balance) {
     /**====---- Payload building ----====**/
     int msg_l = sprintf(new_message->s_payload, log_done_fmt,
                         timestamp,
