@@ -25,7 +25,6 @@
 #define S_MIN_VALUE 1                   ///< Минимальное значение начального баланса
 #define S_MAX_VALUE 99                  ///< Максимальное значение начального баланса
 
-/*int get_opt_p(int argc, char **argv);*/
 
 int get_optc(int argc, char **argv, balance_t **optv_ptr);
 
@@ -77,8 +76,12 @@ int main(int argc, char **argv) {
             optimise_communicator(communicator);
 
             child_run(child_local_id, initial_bank_accounts[child_count]);
+
+            /**====---- Close resources ----====**/
             close_communicator(communicator);
-//            close_logger(logger);
+            close_logger(logger);
+
+            printf("[CHILD #%d] Shutting down... PID=[%d]\n", child_local_id, getpid());
             exit(0);
         }
         printf("[PARENT] Creating child №%d (pid = %d)\n", child_local_id, pid);
@@ -86,6 +89,7 @@ int main(int argc, char **argv) {
     }
 
     optimise_communicator(communicator);
+
     parent_run(children_PIDs);
 
     /**====---- Close resources ----====**/
@@ -109,7 +113,7 @@ void parent_run(pid_t children_PIDs[]) {
     int c;
     int count = 0;
 
-    /**====---- START messages RECEIVE ----====**/
+    /**====---- START-messages RECEIVE ----====**/
     while (-1 != (c = receive_any(communicator, message))) {
         printf("[PARENT-got--START-message %d/%d ]\n", ++count, X);
 
@@ -118,15 +122,12 @@ void parent_run(pid_t children_PIDs[]) {
     }
 
     /**====---- TRANSFERRING BALANCES  ----====**/
-    // TODO bank_robbery() invocation
-    //      = multiple transfer() invocations
     printf("[PARENT] Robbing the bank!\n");
     bank_robbery(message, X);
     printf("[PARENT] Bank was robbed!\n");
 
 
-    /**====---- STOP messages SEND ----====**/
-    // TODO send STOP messages
+    /**====---- STOP-messages SEND ----====**/
     printf("[PARENT] Sending STOP multicast!\n");
     timestamp = get_physical_time();
     build_STOP_msg(message, timestamp);
@@ -134,59 +135,54 @@ void parent_run(pid_t children_PIDs[]) {
     printf("[PARENT] Sent all STOP multicast!\n");
 
 
-//    /**====---- DONE messages RECEIVE ----====**/
-//    count = 0;
-//    while (-1 != (c = receive_any(communicator, message))) {
-//        printf("[PARENT-got-DONE-message %d/%d ]\n", ++count, X);
-//
-//        if (count == X)
-//            break;
-//    }
-//
-//    /**====---- BALANCE_HISTORY message RECEIVE ----====**/
-//    // TODO receive BALANCE_HISTORY messages
-//    // TODO aggregate BALANCE_HISTORY messages
-//    count = 0;
-//    while (-1 != (c = receive_any(communicator, message))) {
-//        BalanceHistory *balanceHistory = (BalanceHistory *) message->s_payload;
-//
-//        printf("[PARENT-got--BALANCE_HISTORY-message %d/%d (%d)]\n", ++count, X, c);
-//        print_BalanceHistory(balanceHistory);
-//
-//        append_AllHistory(&allHistory, balanceHistory);
-//
-//        if (count == X)
-//            break;
-//    }
-    local_id done_children_count = 0;
-    local_id balance_history_count = 0;
-    /**====---- DONE messages RECEIVE ----====**/
-    /**====---- BALANCE_HISTORY message RECEIVE ----====**/
-    while (balance_history_count != X && -1 != (c = receive_any(communicator, message))) {
+    /**====---- DONE-messages RECEIVE ----====**/
+    /*count = 0;
+    while (-1 != (c = receive_any(communicator, message))) {
+        printf("[PARENT-got-DONE-message %d/%d ]\n", ++count, X);
+
+        if (count == X)
+            break;
+    }*/
+
+    /**====---- BALANCE_HISTORY-message RECEIVE ----====**/
+    // TODO receive BALANCE_HISTORY messages
+    // TODO aggregate BALANCE_HISTORY messages
+    /*count = 0;
+    while (-1 != (c = receive_any(communicator, message))) {
+        BalanceHistory *balanceHistory = (BalanceHistory *) message->s_payload;
+
+        printf("[PARENT-got--BALANCE_HISTORY-message %d/%d (%d)]\n", ++count, X, c);
+        print_BalanceHistory(balanceHistory);
+
+        append_AllHistory(&allHistory, balanceHistory);
+
+        if (count == X)
+            break;
+    }*/
+
+    local_id DONE_msg_count = 0;
+    local_id BALANCE_HISTORY_msg_count = 0;
+    /**====---- DONE-messages RECEIVE ----====**/
+    /**====---- BALANCE_HISTORY-message RECEIVE ----====**/
+    while (BALANCE_HISTORY_msg_count != X && -1 != (c = receive_any(communicator, message))) {
         switch (message->s_header.s_type) {
             case DONE:
-                // todo
-                done_children_count++;
-                printf("[PARENT-got-DONE-message %d/%d ]\n", done_children_count, X);
+                DONE_msg_count++;
+                printf("[PARENT-got-DONE-message %d/%d ]\n", DONE_msg_count, X);
                 break;
             case BALANCE_HISTORY:
-                // todo
-                balance_history_count++;
+                BALANCE_HISTORY_msg_count++;
+                printf("[PARENT-got--BALANCE_HISTORY-message %d/%d (%d)]\n", BALANCE_HISTORY_msg_count, X, c);
+
                 BalanceHistory *balanceHistory = (BalanceHistory *) message->s_payload;
-                printf("[PARENT-got--BALANCE_HISTORY-message %d/%d (%d)]\n", balance_history_count, X, c);
                 print_BalanceHistory(balanceHistory);
                 append_AllHistory(&allHistory, balanceHistory);
-                break;
-            default:
-                // todo
                 break;
         }
     }
 
     complete_AllHistory(&allHistory);
 
-
-    // TODO print history
     print_history(&allHistory);
 
     /**====---- Children WAITING ----====**/
@@ -211,16 +207,14 @@ void child_run(local_id id, int bank_account) {
     timestamp = get_physical_time();
     append_BalanceHistory(&balanceHistory, bank_account, timestamp);
 
-
-    /**====---- START messages SEND ----====**/
+    /**====---- START-messages SEND ----====**/
     timestamp = get_physical_time();
     do_log_started_fmt(logger, timestamp, id, bank_account);
     build_log_started_msg(message, timestamp, id, bank_account);
     send_multicast(communicator, message);
 
-    /**====---- START messages RECEIVE ----====**/
-    for (local_id child_count = 0; child_count < X; child_count++) {
-        local_id child_local_id = child_count + 1;
+    /**====---- START-messages RECEIVE ----====**/
+    for (local_id child_local_id = 1; child_local_id <= X; child_local_id++) {
         if (child_local_id == id)
             continue;
         while (0 != receive(communicator, child_local_id, message)) {
@@ -230,97 +224,75 @@ void child_run(local_id id, int bank_account) {
     timestamp = get_physical_time();
     do_log_received_all_started_fmt(logger, timestamp, id);
 
-
-    /**====---- TRANSFER & STOP messages processing ----====**/
+    /**====---- TRANSFER & STOP-messages processing ----====**/
     TransferOrder *transferOrder;
-    bool is_stopped = false;
     local_id stopped_children_count = 0;
-    //TODO process TRANSFER & STOP messages
-    for (;;) {
-        printf("[CHILD #%d] DONE-children-counter %d/%d]\n", id, stopped_children_count, X);
+    while (stopped_children_count != X && -1 != receive_any(communicator, message)) {
+        timestamp = get_physical_time();
 
-        while (stopped_children_count != X && -1 != receive_any(communicator, message)) {
-            timestamp = get_physical_time();
+        switch (message->s_header.s_type) {
+            case TRANSFER:
+                transferOrder = (TransferOrder *) message->s_payload;
+                if (transferOrder->s_dst == id) {
+                    printf("[CHILD #%d] got-TRANSFER-message %d -> %d IS_DESTINATION\n",
+                           id, transferOrder->s_src, transferOrder->s_dst);
 
-            switch (message->s_header.s_type) {
-                case TRANSFER:
-                    transferOrder = (TransferOrder *) message->s_payload;
-                    printf("[CHILD #%d] got-TRANSFER-message %d -> %d ", id, transferOrder->s_src,
-                           transferOrder->s_dst);
+                    bank_account += transferOrder->s_amount;
 
-                    if (transferOrder->s_dst == id) {
-                        printf("IS_DESTINATION\n");
-                        bank_account += transferOrder->s_amount;
+                    /**====---- ACK-message SEND ----====**/
+                    build_ACK_msg(message_out, timestamp);
+                    send(communicator, PARENT_ID, message_out);
+                    do_log_transfer_in_fmt(logger, timestamp, id, transferOrder->s_src, transferOrder->s_amount);
+                } else {
+                    printf("[CHILD #%d] got-TRANSFER-message %d -> %d IS_SENDER\n",
+                           id, transferOrder->s_src, transferOrder->s_dst);
 
-                        build_ACK_msg(message_out, timestamp);
-                        /*int res =*/ send(communicator, PARENT_ID, message_out);
-                        /*printf("[CHILD #%d] \t %d -> %d [%d]\n", id, id, PARENT_ID, res);*/
-                        do_log_transfer_in_fmt(logger, timestamp,
-                                               id,
-                                               transferOrder->s_src,
-                                               transferOrder->s_amount);
-                        append_BalanceHistory(&balanceHistory, bank_account, timestamp);
-                    } else {
-                        if (is_stopped) {
-                            printf("[CHILD #%d] Error! Got TRANSFER from Parent after STOP!", id);
-                            exit(-30);
-                        }
-                        printf("IS_SENDER\n");
-                        bank_account -= transferOrder->s_amount;
+                    bank_account -= transferOrder->s_amount;
 
-                        build_TRANSFER_msg(message_out, timestamp, transferOrder);
-                        /*int res =*/ send(communicator, transferOrder->s_dst, message_out);
-                        /*printf("[CHILD #%d] \t %d -> %d [%d]\n", id, id, transferOrder->s_dst, res);*/
-                        do_log_transfer_out_fmt(logger, timestamp,
-                                                id,
-                                                transferOrder->s_dst,
-                                                transferOrder->s_amount);
-                        append_BalanceHistory(&balanceHistory, bank_account, timestamp);
-                    }
-                    break;
-                case STOP:
-                    // todo
-                    printf("[CHILD #%d] got-STOP-message\n", id);
-                    is_stopped = true;
-                    stopped_children_count++;
-//                    goto SEND_DONE_MULTICAST;
+                    /**====---- TRANSFER-message SEND ----====**/
+                    build_TRANSFER_msg(message_out, timestamp, transferOrder);
+                    send(communicator, transferOrder->s_dst, message_out);
+                    do_log_transfer_out_fmt(logger, timestamp, id, transferOrder->s_dst, transferOrder->s_amount);
+                }
+                append_BalanceHistory(&balanceHistory, bank_account, timestamp);
+                break;
+            case STOP:
+                printf("[CHILD #%d] got-STOP-message\n", id);
+                stopped_children_count++;
 
-                    /**====---- DONE messages SEND ----====**/
-                    timestamp = get_physical_time();
-                    do_log_done_fmt(logger, timestamp, id, bank_account);
-                    build_log_done_msg(message, timestamp, id, bank_account);
-                    send_multicast(communicator, message);
-                    break;
-                case DONE:
-                    /**====---- DONE messages RECEIVE ----====**/
-                    printf("[CHILD #%d] got-DONE-message [stopped_children_count %d->%d]\n",
-                           id,
-                           stopped_children_count, stopped_children_count + 1);
-                    stopped_children_count++;
-                    break;
-                default:
-                    // todo
-                    printf("[CHILD #%d] got-message\n", id);
-                    break;
-            }
-        }
-        if (stopped_children_count == X) {
-            printf("[CHILD #%d] RECEIVED ALL DONE\n", id);
-            do_log_received_all_done_fmt(logger, timestamp, id);
-            goto SEND_BALANCE_HISTORY;
+                /**====---- DONE-messages SEND ----====**/
+                build_log_done_msg(message, timestamp, id, bank_account);
+                send_multicast(communicator, message);
+                do_log_done_fmt(logger, timestamp, id, bank_account);
+                break;
+            case DONE:
+                /**====---- DONE-messages RECEIVE ----====**/
+                printf("[CHILD #%d] got-DONE-message [stopped_children_count %d->%d]\n",
+                       id,
+                       stopped_children_count, stopped_children_count + 1);
+                stopped_children_count++;
+                break;
+            default:
+                printf("[CHILD #%d] got-message\n", id);
+                break;
         }
     }
+    if (stopped_children_count == X) {
+        printf("[CHILD #%d] RECEIVED ALL DONE\n", id);
+        do_log_received_all_done_fmt(logger, timestamp, id);
+        goto SEND_BALANCE_HISTORY;
+    } else {
+        exit(-27);
+    }
 
-//    SEND_DONE_MULTICAST:
-    /**====---- DONE messages SEND ----====**/
-    timestamp = get_physical_time();
+    /**====---- DONE-messages SEND ----====**/
+    /*timestamp = get_physical_time();
     do_log_done_fmt(logger, timestamp, id, bank_account);
     build_log_done_msg(message, timestamp, id, bank_account);
-    send_multicast(communicator, message);
+    send_multicast(communicator, message);*/
 
-//    RECEIVE_ALL_DONE:
-    /**====---- DONE messages RECEIVE ----====**/
-    timestamp = get_physical_time();
+    /**====---- DONE-messages RECEIVE ----====**/
+    /*timestamp = get_physical_time();
     for (local_id child_count = 0; child_count < X; child_count++) {
         local_id child_local_id = child_count + 1;
         if (child_local_id == id)
@@ -329,45 +301,16 @@ void child_run(local_id id, int bank_account) {
             sleep(1);
         }
     }
-    do_log_received_all_done_fmt(logger, timestamp, id);
+    do_log_received_all_done_fmt(logger, timestamp, id);*/
 
     SEND_BALANCE_HISTORY:
-    /**====---- BALANCE_HISTORY message SEND ----====**/
-    // TODO send BALANCE_HISTORY message
+    /**====---- BALANCE_HISTORY-message SEND ----====**/
     timestamp = get_physical_time();
     build_BALANCE_HISTORY_msg(message_out, timestamp, &balanceHistory);
     send(communicator, PARENT_ID, message_out);
     printf("[CHILD #%d] sent BALANCE_HISTORY\n", id);
-
-    printf("[CHILD] Shutting down... PID=[%d]\n", getpid());
 }
 
-/*int get_opt_p(int argc, char **argv) {
-    char *opts = "p:";                  ///< список доступных опций
-    int opt;                            ///< каждая следующая опция попадает сюда
-    int X = -1;
-
-    while (-1 != (opt = getopt(argc, argv, opts))) {
-        switch (opt) {
-            case 'p':                   ///< если опция -p, преобразуем строку с аргументом в число
-                X = atoi(optarg);
-                break;
-            default:
-                break;
-        }
-    }
-
-    if (X < 1) {
-        printf("[main:get_opt_p] Параметр X некорректен\n");
-        printf("[main:get_opt_p] Необходимо указать аргумент -p \n");
-        // abort();
-        exit(-1);
-    }
-
-    printf("[main:get_opt_p] Параметр X равен %d\n", X);
-
-    return X;
-}*/
 
 /**====---- Getting bank accounts count ----====**/
 int get_optc(int argc, char **argv, balance_t **optv_ptr) {

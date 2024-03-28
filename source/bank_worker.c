@@ -1,8 +1,6 @@
 #include "bank_worker.h"
 
-/*void init_AllHistory(AllHistory *allHistory, int X) {
-
-}*/
+/**====---- AllHistory working ----====**/
 
 void append_AllHistory(AllHistory *allHistory, BalanceHistory *balanceHistory) {
     memcpy(allHistory->s_history + allHistory->s_history_len,
@@ -12,13 +10,14 @@ void append_AllHistory(AllHistory *allHistory, BalanceHistory *balanceHistory) {
 }
 
 timestamp_t get_end_timestamp(AllHistory *allHistory) {
+    BalanceHistory balanceHistory;
+    BalanceState balanceState;
     timestamp_t result = 0;
 
     for (int i = 0; i < allHistory->s_history_len; i++) {
-        BalanceHistory balanceHistory = allHistory->s_history[i];
-//        if (balanceHistory.s_history_len > result)
-//            result = balanceHistory.s_history_len;
-        BalanceState balanceState = balanceHistory.s_history[balanceHistory.s_history_len-1];
+        balanceHistory = allHistory->s_history[i];
+        balanceState = balanceHistory.s_history[balanceHistory.s_history_len-1];
+
         if (balanceState.s_time > result)
             result = balanceState.s_time;
     }
@@ -36,11 +35,7 @@ void complete_AllHistory(AllHistory *allHistory) {
     }
 }
 
-
-
-/*void init_BalanceHistory(BalanceHistory *balanceHistory, local_id id) {
-
-}*/
+/**====---- BalanceHistory working ----====**/
 
 void append_BalanceHistory_wrapper(BalanceHistory *balanceHistory, BalanceState balanceState) {
     balanceHistory->s_history[balanceHistory->s_history_len] = balanceState;
@@ -48,16 +43,16 @@ void append_BalanceHistory_wrapper(BalanceHistory *balanceHistory, BalanceState 
 }
 
 void append_BalanceHistory(BalanceHistory *balanceHistory, balance_t balance, timestamp_t timestamp) {
-    BalanceState balanceState = {
+    BalanceState new_balanceState = {
             .s_balance = balance,
             .s_time = timestamp,
             .s_balance_pending_in = 0
     };
 
-    append_BalanceHistory_wrapper(balanceHistory, balanceState);
+    append_BalanceHistory_wrapper(balanceHistory, new_balanceState);
 }
 
-void optimise_BalanceHistory(BalanceHistory *balanceHistory) {
+/*void optimise_BalanceHistory(BalanceHistory *balanceHistory) {
     uint8_t new_len = 0;
     BalanceState new_history[MAX_T + 1];
 
@@ -76,18 +71,17 @@ void optimise_BalanceHistory(BalanceHistory *balanceHistory) {
 
     balanceHistory->s_history_len = new_len;
     memcpy(balanceHistory->s_history, new_history, sizeof(new_history));
-}
+}*/
 
 void complete_BalanceHistory(BalanceHistory *balanceHistory, timestamp_t end_timestamp) {
-    uint8_t new_len = 0;
     BalanceState new_history[MAX_T + 1];
-
     BalanceState new_balanceState = {
         .s_time = -1,
         .s_balance = 0,
         .s_balance_pending_in = 0
     };
 
+    uint8_t new_len = 0;
     for (int i = 0; i < balanceHistory->s_history_len; i++) {
         BalanceState balanceState = balanceHistory->s_history[i];
 
