@@ -38,6 +38,7 @@ tar:$(BUILD_DIR)/solution
 	cp $(SOURCE_DIR)/communicator.* $(BUILD_DIR)/pa3
 	cp $(SOURCE_DIR)/logger.* $(BUILD_DIR)/pa3
 	cp $(SOURCE_DIR)/message_builder.* $(BUILD_DIR)/pa3
+	cp $(SOURCE_DIR)/lamport_ipc.* $(BUILD_DIR)/pa3
 	cp $(SOURCE_DIR)/ipc.c $(BUILD_DIR)/pa3
 	cp $(SOURCE_DIR)/main.c $(BUILD_DIR)/pa3
 	tar -czpf $(BUILD_DIR)/pa3.tar.gz -C $(BUILD_DIR) pa3
@@ -45,7 +46,7 @@ tar:$(BUILD_DIR)/solution
 
 res:
 	rm -r ./res/*
-	cp /mnt/c/Users/kimda/Downloads/pa2_results.tar.gz.gpg res/
-	gpg -d res/pa2_results.tar.gz.gpg > res/pa2_results.tar.gz
+	cp /mnt/c/Users/kimda/Downloads/pa3_results.tar.gz.gpg res/
+	gpg -d res/pa3_results.tar.gz.gpg > res/pa3_results.tar.gz
 	explorer.exe res
 
