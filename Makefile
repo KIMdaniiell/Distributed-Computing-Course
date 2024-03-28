@@ -7,13 +7,13 @@ TEST_DIR = test
 
 # clang -std=c99 -Wall -pedantic ./*.c -o ../solution
 
-$(BUILD_DIR)/solution: $(SOURCE_DIR)/main.c $(SOURCE_DIR)/*.c $(SOURCE_DIR)/*.h
+$(BUILD_DIR)/solution: $(SOURCE_DIR)/main.c
 	@clang -std=c99 -Wall -pedantic $(SOURCE_DIR)/*.c -o $(BUILD_DIR)/solution -L./$(SOURCE_DIR) -lruntime
 
-$(BUILD_DIR)/solution_test: $(TEST_DIR)/main.c
-	@clang -std=c99 -Wall -pedantic $(TEST_DIR)/*.c -o $(BUILD_DIR)/solution_test -L./$(SOURCE_DIR) -lruntime
+#$(BUILD_DIR)/solution_test: $(TEST_DIR)/main.c
+#	@clang -std=c99 -Wall -pedantic $(TEST_DIR)/*.c -o $(BUILD_DIR)/solution_test -L./$(SOURCE_DIR) -lruntime
 
-all: $(SOURCE_DIR)/main.c $(TEST_DIR)/main.c $(SOURCE_DIR)/*.c $(SOURCE_DIR)/*.h
+all: $(SOURCE_DIR)/main.c $(TEST_DIR)/main.c
 	@clang -std=c99 -Wall -pedantic $(SOURCE_DIR)/*.c -o $(BUILD_DIR)/solution -L./$(SOURCE_DIR) -lruntime
 	@clang -std=c99 -Wall -pedantic $(TEST_DIR)/*.c -o $(BUILD_DIR)/solution_test -L./$(SOURCE_DIR) -lruntime
 
@@ -26,7 +26,7 @@ run_no_opt: $(BUILD_DIR)/solution
 
 build: $(BUILD_DIR)/solution
 
-test: $(BUILD_DIR)/solution_test
+test: $(TEST_DIR)/main.c
 	@./$(BUILD_DIR)/solution_test -p 3 11 22 33
 
 clean:
@@ -39,6 +39,9 @@ tar:$(BUILD_DIR)/solution
 	cp $(SOURCE_DIR)/logger.* $(BUILD_DIR)/pa4
 	cp $(SOURCE_DIR)/message_builder.* $(BUILD_DIR)/pa4
 	cp $(SOURCE_DIR)/lamport_ipc.* $(BUILD_DIR)/pa4
+	cp $(SOURCE_DIR)/process.* $(BUILD_DIR)/pa4
+	cp $(SOURCE_DIR)/parent_process.* $(BUILD_DIR)/pa4
+	cp $(SOURCE_DIR)/child_process.* $(BUILD_DIR)/pa4
 	cp $(SOURCE_DIR)/ipc.c $(BUILD_DIR)/pa4
 	cp $(SOURCE_DIR)/main.c $(BUILD_DIR)/pa4
 	tar -czpf $(BUILD_DIR)/pa3.tar.gz -C $(BUILD_DIR) pa4
@@ -46,7 +49,7 @@ tar:$(BUILD_DIR)/solution
 
 res:
 	rm -r ./res/*
-	cp /mnt/c/Users/kimda/Downloads/pa3_results.tar.gz.gpg res/
+	cp /mnt/c/Users/kimda/Downloads/pa4_results.tar.gz.gpg res/
 	gpg -d res/pa4_results.tar.gz.gpg > res/pa4_results.tar.gz
 	explorer.exe res
 
