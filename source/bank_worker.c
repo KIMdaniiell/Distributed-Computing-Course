@@ -42,11 +42,12 @@ void append_BalanceHistory_wrapper(BalanceHistory *balanceHistory, BalanceState 
     balanceHistory->s_history_len++;
 }
 
-void append_BalanceHistory(BalanceHistory *balanceHistory, balance_t balance, timestamp_t timestamp) {
+void append_BalanceHistory(BalanceHistory *balanceHistory, balance_t balance, timestamp_t timestamp,
+                           balance_t balance_pending_in) {
     BalanceState new_balanceState = {
             .s_balance = balance,
             .s_time = timestamp,
-            .s_balance_pending_in = 0
+            .s_balance_pending_in = balance_pending_in
     };
 
     append_BalanceHistory_wrapper(balanceHistory, new_balanceState);
@@ -109,8 +110,9 @@ void complete_BalanceHistory(BalanceHistory *balanceHistory, timestamp_t end_tim
 void print_BalanceHistory(BalanceHistory *balanceHistory) {
     for (int i = 0; i < balanceHistory->s_history_len; i++) {
         BalanceState balanceState = balanceHistory->s_history[i];
-        printf("[bank_worker:print_BalanceHistory] %d  TIME=%d , BALANCE=%d\n",
+        printf("[bank_worker:print_BalanceHistory] %d  TIME=%d , BALANCE=%d (%d)\n",
                balanceHistory->s_id,
-               balanceState.s_time, balanceState.s_balance);
+               balanceState.s_time, balanceState.s_balance,
+               balanceState.s_balance_pending_in);
     }
 }

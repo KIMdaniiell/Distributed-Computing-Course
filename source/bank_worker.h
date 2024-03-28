@@ -16,7 +16,8 @@ void complete_AllHistory(AllHistory *allHistory);
 
 void append_BalanceHistory_wrapper(BalanceHistory *balanceHistory, BalanceState balanceState);
 
-void append_BalanceHistory(BalanceHistory *balanceHistory, balance_t balance, timestamp_t timestamp);
+void append_BalanceHistory(BalanceHistory *balanceHistory, balance_t balance, timestamp_t timestamp,
+                           balance_t balance_pending_in);
 
 /*void optimise_BalanceHistory(BalanceHistory *balanceHistory);*/
 
