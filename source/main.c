@@ -16,6 +16,7 @@
 #include "communicator.h"
 #include "message_builder.h"
 #include "bank_worker.h"
+#include "lamport_ipc.h"
 
 
 #define N_MIN_VALUE 2                   ///< Минимальное число процессов
@@ -24,9 +25,6 @@
 #define X_MAX_VALUE N_MAX_VALUE - 1     ///< Максимальное число процессов
 #define S_MIN_VALUE 1                   ///< Минимальное значение начального баланса
 #define S_MAX_VALUE 99                  ///< Максимальное значение начального баланса
-
-
-#define get_physical_time get_lamport_time
 
 
 int get_optc(int argc, char **argv, balance_t **optv_ptr);
@@ -118,7 +116,7 @@ void parent_run(pid_t children_PIDs[]) {
     int count = 0;
 
     /**====---- START-messages RECEIVE ----====**/
-    while (-1 != (c = receive_any(communicator, message))) {
+    while (-1 != decorated_receive_any(communicator, message, &timestamp)) {
         printf("[PARENT-got--START-message %d/%d ]\n", ++count, X);
 
         if (count == X)
@@ -133,9 +131,8 @@ void parent_run(pid_t children_PIDs[]) {
 
     /**====---- STOP-messages SEND ----====**/
     printf("[PARENT] Sending STOP multicast!\n");
-//    timestamp = get_physical_time();
     build_STOP_msg(message, timestamp);
-    send_multicast(communicator, message);
+    decorated_send_multicast(communicator, message, &timestamp);
     printf("[PARENT] Sent all STOP multicast!\n");
 
 
@@ -166,7 +163,7 @@ void parent_run(pid_t children_PIDs[]) {
     local_id BALANCE_HISTORY_msg_count = 0;
     /**====---- DONE-messages RECEIVE ----====**/
     /**====---- BALANCE_HISTORY-message RECEIVE ----====**/
-    while (BALANCE_HISTORY_msg_count != X && -1 != (c = receive_any(communicator, message))) {
+    while (BALANCE_HISTORY_msg_count != X && -1 != (c = decorated_receive_any(communicator, message, &timestamp))) {
         switch (message->s_header.s_type) {
             case DONE:
                 DONE_msg_count++;
@@ -204,39 +201,27 @@ void child_run(local_id id, int bank_account) {
     };
 
     /**====---- Initial balance SAVE ----====**/
-//    timestamp = get_physical_time();
     append_BalanceHistory(&balanceHistory, bank_account, timestamp, 0);
 
     /**====---- START-messages SEND ----====**/
-//    timestamp = get_physical_time();
     do_log_started_fmt(logger, timestamp, id, bank_account);
     build_log_started_msg(message, timestamp, id, bank_account);
-    send_multicast(communicator, message);
+    decorated_send_multicast(communicator, message, &timestamp);
 
     /**====---- START-messages RECEIVE ----====**/
     for (local_id child_local_id = 1; child_local_id <= X; child_local_id++) {
         if (child_local_id == id)
             continue;
-        while (0 != receive(communicator, child_local_id, message)) {
-            sleep(1);
-        }
+        decorated_receive(communicator, child_local_id, message, &timestamp);
     }
-//    timestamp = get_physical_time();
     do_log_received_all_started_fmt(logger, timestamp, id);
 
     /**====---- TRANSFER & STOP-messages processing ----====**/
     TransferOrder *transferOrder;
     local_id stopped_children_count = 0;
-    while (stopped_children_count != X && -1 != receive_any(communicator, message)) {
-//        timestamp = get_physical_time();
-
+    while (stopped_children_count != X && -1 != decorated_receive_any(communicator, message, &timestamp)) {
         switch (message->s_header.s_type) {
             case TRANSFER:
-                if (message->s_header.s_local_time > timestamp) {
-                    timestamp = message->s_header.s_local_time;
-                }
-                timestamp = get_physical_time();
-
                 transferOrder = (TransferOrder *) message->s_payload;
                 if (transferOrder->s_dst == id) {
                     printf("[CHILD #%d] got-TRANSFER-message %d -> %d IS_DESTINATION\n",
@@ -246,9 +231,10 @@ void child_run(local_id id, int bank_account) {
 
                     /**====---- ACK-message SEND ----====**/
                     build_ACK_msg(message_out, timestamp);
-                    send(communicator, PARENT_ID, message_out);
+                    decorated_send(communicator, PARENT_ID, message_out, &timestamp);
                     do_log_transfer_in_fmt(logger, timestamp, id, transferOrder->s_src, transferOrder->s_amount);
                     append_BalanceHistory(&balanceHistory, bank_account, timestamp, 0);
+
                     /**====---- FIN-message SEND ----====**/
                     build_FIN_msg(message_out, timestamp, transferOrder->s_amount);
                     send(communicator, transferOrder->s_src, message_out);
@@ -260,7 +246,7 @@ void child_run(local_id id, int bank_account) {
 
                     /**====---- TRANSFER-message SEND ----====**/
                     build_TRANSFER_msg(message_out, timestamp, transferOrder);
-                    send(communicator, transferOrder->s_dst, message_out);
+                    decorated_send(communicator, transferOrder->s_dst, message_out, &timestamp);
                     do_log_transfer_out_fmt(logger, timestamp, id, transferOrder->s_dst, transferOrder->s_amount);
                     append_BalanceHistory(&balanceHistory, bank_account, timestamp, transferOrder->s_amount);
                 }
@@ -271,7 +257,7 @@ void child_run(local_id id, int bank_account) {
 
                 /**====---- DONE-messages SEND ----====**/
                 build_log_done_msg(message, timestamp, id, bank_account);
-                send_multicast(communicator, message);
+                decorated_send_multicast(communicator, message, &timestamp);
                 do_log_done_fmt(logger, timestamp, id, bank_account);
                 break;
             case DONE:
@@ -321,9 +307,8 @@ void child_run(local_id id, int bank_account) {
 
     SEND_BALANCE_HISTORY:
     /**====---- BALANCE_HISTORY-message SEND ----====**/
-//    timestamp = get_physical_time();
     build_BALANCE_HISTORY_msg(message_out, timestamp, &balanceHistory);
-    send(communicator, PARENT_ID, message_out);
+    decorated_send(communicator, PARENT_ID, message_out, &timestamp);
     printf("[CHILD #%d] sent BALANCE_HISTORY\n", id);
 }
 
@@ -413,18 +398,17 @@ void transfer(void *parent_data, local_id src, local_id dst, balance_t amount) {
             .s_dst = dst,
             .s_amount = amount
     };
-//    timestamp = get_physical_time();
 
     /**====---- Build Message ----====**/
     build_TRANSFER_msg(message, timestamp, &transferOrder);
 
-    int res;
     /**====---- TRANSFER Message SEND ----====**/
-    res = send(communicator, src, message);
+    decorated_send(communicator, src, message, &timestamp);
 
     /**====---- ACK Message RECEIVE ----====**/
+    int res;
     for (;;) {
-        res = receive(communicator, dst, message);
+        res = decorated_receive(communicator, dst, message, &timestamp);
 
         if (res == 0) {
             /*printf("[id = %d] [from = %d] [code = %d] [c_N = %d]\n",
@@ -444,6 +428,5 @@ void transfer(void *parent_data, local_id src, local_id dst, balance_t amount) {
 
 
 timestamp_t get_lamport_time() {
-    timestamp++;
     return timestamp;
 }
