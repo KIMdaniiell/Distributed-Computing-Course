@@ -13,12 +13,20 @@
 
 #include "logger.h"
 #include "communicator.h"
-#include "messenger.h"
+#include "message_builder.h"
+
+
+#define N_MIN_VALUE 2                   ///< Минимальное число процессов
+#define N_MAX_VALUE 10                  ///< Максимальное число процессов
+#define X_MIN_VALUE N_MIN_VALUE - 1     ///< Минимальное число процессов
+#define X_MAX_VALUE N_MAX_VALUE - 1     ///< Максимальное число процессов
+#define S_MIN_VALUE 1                   ///< Минимальное значение начального баланса
+#define S_MAX_VALUE 99                  ///< Максимальное значение начального баланса
 
 
 int get_opt_p(int argc, char **argv);
 
-void parent_run(pid_t children[]);
+void parent_run(pid_t children_PIDs[]);
 
 void child_run(local_id id);
 
@@ -26,30 +34,33 @@ void child_run(local_id id);
 struct communicator *communicator;
 struct logger *logger;
 
-int N;      ///< Число детей        BOTH_USE
-int X;      ///< Число процессов
+
+int N;      ///< Общее число процессов
+int X;      ///< Число дочерних процессов
 
 
 int main(int argc, char **argv) {
-    printf("[PARENT] Starting ... PID=[%d]\n", getpid());
 
-    /**====---- Init variables ----====**/
+    /**====---- Command-line argument parsing ----====**/
     X = get_opt_p(argc, argv);
     int N = X + 1;
-    pid_t children[X];                              ///< список pid детей, для wait в родительском процессе   PARENT_USE
-    pid_t pid;
-    local_id id = 0;
+    printf("[main] Параметр N (общее число процессов) равен %d\n", N);
+    printf("[main] Параметр X (число дочерних процессов) равен %d\n", X);
 
     /**====---- Init communicator ----====**/
+    printf("\n");
     communicator = init_communicator(X + 1);
-    communicator->header.owner_id = id;
+    printf("\n");
+    communicator->header.owner_id = PARENT_ID;
     communicator->header.N = N;
 
     /**====---- Init logger ----====**/
     logger = init_logger();
 
-
     /**====---- BREEDING ----====**/
+    printf("[PARENT] Starting ... PID=[%d]\n", getpid());
+    pid_t children_PIDs[X];
+    pid_t pid;
     for (local_id child_count = 0; child_count < X; child_count++) {
         local_id child_local_id = child_count + 1;
 
@@ -60,28 +71,37 @@ int main(int argc, char **argv) {
             optimise_communicator(communicator);
 
             child_run(child_local_id);
+
+            /**====---- Close resources ----====**/
             close_communicator(communicator);
+            close_logger(logger);
+
+            printf("[CHILD #%d] Shutting down... PID=[%d]\n", child_local_id, getpid());
             exit(0);
         }
         printf("[PARENT] Creating child №%d (pid = %d)\n", child_local_id, pid);
-        children[child_count] = pid;
+        children_PIDs[child_count] = pid;
     }
 
     optimise_communicator(communicator);
-    parent_run(children);
+
+    parent_run(children_PIDs);
 
     /**====---- Close resources ----====**/
     close_communicator(communicator);
     close_logger(logger);
 
+    printf("[PARENT] Shutting down... PID=[%d]\n", getpid());
     return 0;
 }
 
-void parent_run(pid_t children[]) {
+void parent_run(pid_t children_PIDs[]) {
     Message *message = (Message *) calloc(1, MAX_MESSAGE_LEN);
 
     int c;
     int count = 0;
+
+    /**====---- START-messages RECEIVE ----====**/
     while (-1 != (c = receive_any(communicator, message))) {
         printf("[PARENT-got--START-message %d/%d ]\n", ++count, X);
 
@@ -89,6 +109,7 @@ void parent_run(pid_t children[]) {
             break;
     }
 
+    /**====---- DONE-messages RECEIVE ----====**/
     count = 0;
     while (-1 != (c = receive_any(communicator, message))) {
         printf("[PARENT-got-DONE-message %d/%d ]\n", ++count, X);
@@ -97,14 +118,14 @@ void parent_run(pid_t children[]) {
             break;
     }
 
+    /**====---- Children WAITING ----====**/
     for (int child_count = 0; child_count < X; child_count++) {
         int child_status = 0;
 
-        waitpid(children[child_count], &child_status, 0);
-        printf("Wait [%d] complete\n", children[child_count]);
+        waitpid(children_PIDs[child_count], &child_status, 0);
+//        printf("Wait [%d] complete\n", children[child_count]);
+        printf("[PARENT-wait-complete pid=%d %d/%d]\n", children_PIDs[child_count], child_count + 1, X);
     }
-
-    printf("Shutting down... PID=[%d]\n", getpid());
 }
 
 void child_run(local_id id) {
@@ -112,7 +133,7 @@ void child_run(local_id id) {
 
     /**====---- START messages SEND ----====**/
     do_log_started_fmt(logger, id);
-    init_log_started_fmt_message(message, id);
+    build_log_STARTED_msg(message, id);
     send_multicast(communicator, message);
 
     /**====---- START messages RECEIVE ----====**/
@@ -128,7 +149,7 @@ void child_run(local_id id) {
 
     /**====---- DONE messages SEND ----====**/
     do_log_done_fmt(logger, id);
-    init_log_done_fmt(message, id);
+    build_log_DONE_msg(message, id);
     send_multicast(communicator, message);
 
     /**====---- DONE messages RECEIVE ----====**/
@@ -141,8 +162,6 @@ void child_run(local_id id) {
         }
     }
     do_log_received_all_done_fmt(logger, id);
-
-    printf("[CHILD] Shutting down... PID=[%d]\n", getpid());
 }
 
 int get_opt_p(int argc, char **argv) {
@@ -163,7 +182,6 @@ int get_opt_p(int argc, char **argv) {
     if (X < 1) {
         printf("[main:get_opt_p] Параметр X некорректен\n");
         printf("[main:get_opt_p] Необходимо указать аргумент -p \n");
-        // abort();
         exit(-1);
     }
 

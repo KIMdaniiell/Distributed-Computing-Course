@@ -7,10 +7,10 @@ TEST_DIR = test
 
 # clang -std=c99 -Wall -pedantic ./*.c -o ../solution
 
-$(BUILD_DIR)/solution: $(SOURCE_DIR)/main.c $(SOURCE_DIR)/*.c $(SOURCE_DIR)/*.h
+$(BUILD_DIR)/solution: $(SOURCE_DIR)/main.c
 	@clang -std=c99 -Wall -pedantic $(SOURCE_DIR)/*.c -o $(BUILD_DIR)/solution
 
-$(BUILD_DIR)/solution_test: $(TEST_DIR)/main.c $(TEST_DIR)/*.c $(TEST_DIR)/*.h
+$(BUILD_DIR)/solution_test: $(TEST_DIR)/main.c
 	@clang -std=c99 -Wall -pedantic $(TEST_DIR)/*.c -o $(BUILD_DIR)/solution_test
 
 #all: $(SOURCE_DIR)/main.c $(TEST_DIR)/main.c
