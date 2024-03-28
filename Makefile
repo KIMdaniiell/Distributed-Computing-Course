@@ -33,14 +33,14 @@ clean:
 	@rm -r ./$(BUILD_DIR)/*
 
 tar:$(BUILD_DIR)/solution
-	mkdir $(BUILD_DIR)/pa2
-	cp $(SOURCE_DIR)/bank_worker.* $(BUILD_DIR)/pa2
-	cp $(SOURCE_DIR)/communicator.* $(BUILD_DIR)/pa2
-	cp $(SOURCE_DIR)/logger.* $(BUILD_DIR)/pa2
-	cp $(SOURCE_DIR)/message_builder.* $(BUILD_DIR)/pa2
-	cp $(SOURCE_DIR)/ipc.c $(BUILD_DIR)/pa2
-	cp $(SOURCE_DIR)/main.c $(BUILD_DIR)/pa2
-	tar -czpf $(BUILD_DIR)/pa2.tar.gz -C $(BUILD_DIR) pa2
+	mkdir $(BUILD_DIR)/pa3
+	cp $(SOURCE_DIR)/bank_worker.* $(BUILD_DIR)/pa3
+	cp $(SOURCE_DIR)/communicator.* $(BUILD_DIR)/pa3
+	cp $(SOURCE_DIR)/logger.* $(BUILD_DIR)/pa3
+	cp $(SOURCE_DIR)/message_builder.* $(BUILD_DIR)/pa3
+	cp $(SOURCE_DIR)/ipc.c $(BUILD_DIR)/pa3
+	cp $(SOURCE_DIR)/main.c $(BUILD_DIR)/pa3
+	tar -czpf $(BUILD_DIR)/pa3.tar.gz -C $(BUILD_DIR) pa3
 	explorer.exe $(BUILD_DIR)
 
 res:
