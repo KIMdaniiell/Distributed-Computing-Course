@@ -10,40 +10,59 @@ struct logger *init_logger() {
     return logger;
 }
 
-int do_log_started_fmt(struct logger *logger, int local_id) {
-    logger->log_length = sprintf(
-            logger->log_buffer,
-            log_started_fmt,
-            local_id,
-            getpid(),
-            getppid());
+int do_log_started_fmt(struct logger *logger, timestamp_t timestamp, local_id id, balance_t balance) {
+    logger->log_length = sprintf(logger->log_buffer,log_started_fmt,
+                                 timestamp,
+                                 id,
+                                 getpid(), getppid(),
+                                 balance);
 
     return write_log(logger);
 }
 
-int do_log_received_all_started_fmt(struct logger *logger, int local_id) {
-    logger->log_length = sprintf(
-            logger->log_buffer,
-            log_received_all_started_fmt,
-            local_id);
+int do_log_received_all_started_fmt(struct logger *logger, timestamp_t timestamp, local_id id) {
+    logger->log_length = sprintf(logger->log_buffer, log_received_all_started_fmt,
+                                 timestamp,
+                                 id);
 
     return write_log(logger);
 }
 
-int do_log_done_fmt(struct logger *logger, int local_id) {
-    logger->log_length = sprintf(
-            logger->log_buffer,
-            log_done_fmt,
-            local_id);
+int do_log_done_fmt(struct logger *logger, timestamp_t timestamp, local_id id, balance_t balance) {
+    logger->log_length = sprintf(logger->log_buffer, log_done_fmt,
+                                 timestamp,
+                                 id,
+                                 balance);
 
     return write_log(logger);
 }
 
-int do_log_received_all_done_fmt(struct logger *logger, int local_id) {
-    logger->log_length = sprintf(
-            logger->log_buffer,
-            log_received_all_done_fmt,
-            local_id);
+int do_log_transfer_out_fmt(struct logger *logger, timestamp_t timestamp, local_id id, local_id target_id,
+                            balance_t balance) {
+    logger->log_length = sprintf(logger->log_buffer, log_transfer_out_fmt,
+                                 timestamp,
+                                 id,
+                                 balance,
+                                 target_id);
+
+    return write_log(logger);
+}
+
+int do_log_transfer_in_fmt(struct logger *logger, timestamp_t timestamp, local_id id, local_id target_id,
+                           balance_t balance) {
+    logger->log_length = sprintf(logger->log_buffer, log_transfer_in_fmt,
+                                 timestamp,
+                                 id,
+                                 balance,
+                                 target_id);
+
+    return write_log(logger);
+}
+
+int do_log_received_all_done_fmt(struct logger *logger, timestamp_t timestamp, local_id id) {
+    logger->log_length = sprintf(logger->log_buffer, log_received_all_done_fmt,
+                                 timestamp,
+                                 id);
 
     return write_log(logger);
 }
@@ -55,7 +74,6 @@ void close_logger(struct logger *logger) {
     close(logger->file_descriptor);
     free(logger);
 }
-
 
 int write_log(struct logger *logger) {
     return write(logger->file_descriptor, logger->log_buffer, logger->log_length);

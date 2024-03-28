@@ -26,14 +26,14 @@ int send(void *self, local_id dst, const Message *msg) {
 
     int bytes_cnt = write(entry->write_fd, msg, msg->s_header.s_payload_len + sizeof(MessageHeader));
 
-    printf("\t[%02d] sends to [%02d] with pipe № %d \t%d/%lu [H=%lu;P=%d]\n",
+    /*printf("\t[%02d] sends to [%02d] with pipe № %d \t%d/%lu [H=%lu;P=%d]\n",
            communicator->header.owner_id,
            dst,
            entry->write_fd,
            bytes_cnt,
            msg->s_header.s_payload_len + sizeof(MessageHeader),
            sizeof(MessageHeader),
-           msg->s_header.s_payload_len);
+           msg->s_header.s_payload_len);*/
 
     if (bytes_cnt == -1) {
         return -1;
@@ -114,9 +114,14 @@ int receive(void *self, local_id from, Message *msg) {
         }*/
 
         /**====---- Вариант 2 - надеемся что все получим всё что хотим ----====**/
-        read(entry->read_fd, msg->s_payload, payload_l);        // есть шанс не прочитать
-        return 0;
+        /*read(entry->read_fd, msg->s_payload, payload_l);        // есть шанс не прочитать
+        return 0;*/
 
+        /**====---- Вариант 3 - надеемся что все получим всё что хотим, возвращаем ошибку ----====**/
+        if (read(entry->read_fd, msg->s_payload, payload_l) != -1 )        // есть шанс не прочитать
+            return 0;
+        else
+            return -4;
     }
     return -1;
 }
@@ -143,7 +148,7 @@ int receive_any(void *self, Message *msg) {
     int ps_id = 0;
     for (;;) {
 
-        if (ps_id <= N) {
+        if (ps_id + 1 < N) {
             ps_id++;
         } else {
             ps_id = 0;
@@ -155,7 +160,11 @@ int receive_any(void *self, Message *msg) {
 
         int res_code = receive(communicator, ps_id, msg);
 
-//        printf("[id = %d] [ptr = %d] [code = %d]\n", ps_id , pipes_to_read, res_code);
+        /*printf("[id = %d] [from = %d] [pp_to_r = %d] [code = %d] [c_N = %d]\n",
+               communicator->header.owner_id , ps_id,
+               pipes_to_read,
+               res_code,
+               communicator->header.N);*/
 
         if (res_code == -404)
             pipes_to_read--;

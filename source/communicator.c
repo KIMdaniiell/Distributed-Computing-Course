@@ -14,13 +14,13 @@ struct communicator *init_communicator(size_t N) {
         printf(" %d)", i);
         for (int j = 0; j < N; j++) {
             if (i == j) {
-                printf("     [READ=_;WRITE=_]");
+                printf("     [READ=__;WRITE=__]");
                 continue;
             }
 
             if (i > j) {
                 struct entry *entry = &entries[i * N + j];
-                printf("     [READ=%d;WRITE=%d]", entry->read_fd, entry->write_fd);
+                printf("     [READ=%2d;WRITE=%2d]", entry->read_fd, entry->write_fd);
                 continue;
             }
 
@@ -35,16 +35,20 @@ struct communicator *init_communicator(size_t N) {
             entry->write_fd = pipe_fds_i_to_j[1];
             entry->read_fd = pipe_fds_j_to_i[0];
 
-            const int flags_i_to_j = fcntl(entry->read_fd, F_GETFL, 0);
-            fcntl(entry->read_fd, F_SETFL, flags_i_to_j | O_NONBLOCK);
+            const int flags_i_to_j_read = fcntl(entry->read_fd, F_GETFL, 0);
+            fcntl(entry->read_fd, F_SETFL, flags_i_to_j_read | O_NONBLOCK);
+            const int flags_i_to_j_write = fcntl(entry->write_fd, F_GETFL, 0);
+            fcntl(entry->write_fd, F_SETFL, flags_i_to_j_write | O_NONBLOCK);
 
             entry_reverse->write_fd = pipe_fds_j_to_i[1];
             entry_reverse->read_fd = pipe_fds_i_to_j[0];
 
-            const int flags_j_to_i = fcntl(entry_reverse->read_fd, F_GETFL, 0);
-            fcntl(entry_reverse->read_fd, F_SETFL, flags_j_to_i | O_NONBLOCK);
+            const int flags_j_to_i_read = fcntl(entry_reverse->read_fd, F_GETFL, 0);
+            fcntl(entry_reverse->read_fd, F_SETFL, flags_j_to_i_read | O_NONBLOCK);
+            const int flags_j_to_i_write = fcntl(entry_reverse->write_fd, F_GETFL, 0);
+            fcntl(entry_reverse->write_fd, F_SETFL, flags_j_to_i_write | O_NONBLOCK);
 
-            printf("     [READ=%d;WRITE=%d]", entry->read_fd, entry->write_fd);
+            printf("     [READ=%2d;WRITE=%2d]", entry->read_fd, entry->write_fd);
 
             char message[128];
             int msg_len = sprintf(message, "%d/%d\n", pipe_fds_i_to_j[0], pipe_fds_i_to_j[1]);
@@ -79,14 +83,14 @@ void optimise_communicator(struct communicator *communicator) {
     int N = communicator->header.N;
     int owner_id = communicator->header.owner_id;
 
-    printf("%d) ", owner_id);
+//    printf("%d) ", owner_id);
     for (local_id i = 0; i < N; i++) {
         if (i == owner_id)
             continue;
 
         close_commutation(communicator, i);
     }
-    printf("\n");
+//    printf("\n");
 }
 
 struct entry *get_entry_to_write(struct communicator *communicator, local_id receiver_id) {
@@ -114,8 +118,8 @@ void close_commutation(struct communicator *communicator, local_id id) {
             continue;
 
         struct entry *entry = &communicator->entries[id * N + i];
-        printf(" %d", entry->read_fd);
-        printf(" %d", entry->write_fd);
+//        printf(" %d", entry->read_fd);
+//        printf(" %d", entry->write_fd);
         close(entry->read_fd);
         close(entry->write_fd);
     }
