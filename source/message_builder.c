@@ -1,5 +1,7 @@
 #include "message_builder.h"
 
+void set_msg_header(Message *new_message, uint16_t magic, int16_t type, uint16_t payload_len, timestamp_t local_time);
+
 
 void build_log_started_msg(Message *new_message, timestamp_t timestamp, local_id id, balance_t balance) {
     int msg_l = sprintf(new_message->s_payload, log_started_fmt,
@@ -8,10 +10,7 @@ void build_log_started_msg(Message *new_message, timestamp_t timestamp, local_id
                         getpid(), getppid(),
                         balance);
 
-    new_message->s_header.s_magic = MESSAGE_MAGIC;
-    new_message->s_header.s_type = STARTED;
-    new_message->s_header.s_payload_len = msg_l;
-    new_message->s_header.s_local_time = timestamp;
+    set_msg_header(new_message, MESSAGE_MAGIC, STARTED, msg_l, timestamp);
 }
 
 /*void build_log_received_all_started_msg(Message *new_message, timestamp_t timestamp, local_id id) {
@@ -31,10 +30,7 @@ void build_log_done_msg(Message *new_message, timestamp_t timestamp, local_id id
                         id,
                         balance);
 
-    new_message->s_header.s_magic = MESSAGE_MAGIC;
-    new_message->s_header.s_type = DONE;
-    new_message->s_header.s_payload_len = msg_l;
-    new_message->s_header.s_local_time = timestamp;
+    set_msg_header(new_message, MESSAGE_MAGIC, DONE, msg_l, timestamp);
 }
 
 /*void build_log_transfer_out_msg(Message *new_message, timestamp_t timestamp, local_id id, local_id target_id,
@@ -70,7 +66,6 @@ void build_log_done_msg(Message *new_message, timestamp_t timestamp, local_id id
     new_message->s_header.s_local_time = timestamp;
 }*/
 
-
 void build_TRANSFER_msg(Message *new_message, timestamp_t timestamp, TransferOrder *transferOrder) {
     // TODO payload building
     int msg_l = sizeof(TransferOrder);
@@ -80,10 +75,7 @@ void build_TRANSFER_msg(Message *new_message, timestamp_t timestamp, TransferOrd
     payload->s_amount = transferOrder->s_amount;
 
     // TODO msg-header building
-    new_message->s_header.s_magic = MESSAGE_MAGIC;
-    new_message->s_header.s_type = TRANSFER;
-    new_message->s_header.s_payload_len = msg_l;
-    new_message->s_header.s_local_time = timestamp;
+    set_msg_header(new_message, MESSAGE_MAGIC, TRANSFER, msg_l, timestamp);
 }
 
 void build_ACK_msg(Message *new_message, timestamp_t timestamp) {
@@ -91,10 +83,7 @@ void build_ACK_msg(Message *new_message, timestamp_t timestamp) {
     int msg_l = 0;
 
     // TODO msg-header building
-    new_message->s_header.s_magic = MESSAGE_MAGIC;
-    new_message->s_header.s_type = ACK;
-    new_message->s_header.s_payload_len = msg_l;
-    new_message->s_header.s_local_time = timestamp;
+    set_msg_header(new_message, MESSAGE_MAGIC, ACK, msg_l, timestamp);
 }
 
 void build_STOP_msg(Message *new_message, timestamp_t timestamp) {
@@ -102,10 +91,7 @@ void build_STOP_msg(Message *new_message, timestamp_t timestamp) {
     int msg_l = 0;
 
     // TODO msg-header building
-    new_message->s_header.s_magic = MESSAGE_MAGIC;
-    new_message->s_header.s_type = STOP;
-    new_message->s_header.s_payload_len = msg_l;
-    new_message->s_header.s_local_time = timestamp;
+    set_msg_header(new_message, MESSAGE_MAGIC, STOP, msg_l, timestamp);
 }
 
 void build_BALANCE_HISTORY_msg(Message *new_message, timestamp_t timestamp, BalanceHistory *balanceHistory) {
@@ -115,8 +101,13 @@ void build_BALANCE_HISTORY_msg(Message *new_message, timestamp_t timestamp, Bala
     memcpy(new_message->s_payload, balanceHistory, msg_l);
 
     // TODO msg-header building
-    new_message->s_header.s_magic = MESSAGE_MAGIC;
-    new_message->s_header.s_type = BALANCE_HISTORY;
-    new_message->s_header.s_payload_len = msg_l;
-    new_message->s_header.s_local_time = timestamp;
+    set_msg_header(new_message, MESSAGE_MAGIC, BALANCE_HISTORY, msg_l, timestamp);
+}
+
+
+void set_msg_header(Message *new_message, uint16_t magic, int16_t type, uint16_t payload_len, timestamp_t local_time) {
+    new_message->s_header.s_magic = magic;
+    new_message->s_header.s_type = type;
+    new_message->s_header.s_payload_len = payload_len;
+    new_message->s_header.s_local_time = local_time;
 }
