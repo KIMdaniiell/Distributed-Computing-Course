@@ -44,7 +44,6 @@ void build_log_transfer_out_msg(Message *new_message, timestamp_t timestamp, loc
                         balance,
                         target_id);
 
-    // TODO message header building
 }
 
 void build_log_transfer_in_msg(Message *new_message, timestamp_t timestamp, local_id id, local_id target_id,
@@ -55,7 +54,6 @@ void build_log_transfer_in_msg(Message *new_message, timestamp_t timestamp, loca
                         balance,
                         target_id);
 
-    // TODO message header building
 }
 
 void build_log_received_all_done_msg(Message *new_message, timestamp_t timestamp, local_id id) {
@@ -84,6 +82,16 @@ void build_TRANSFER_msg(Message *new_message, timestamp_t timestamp, TransferOrd
 void build_ACK_msg(Message *new_message, timestamp_t timestamp) {
     /**====---- Payload building ----====**/
     int msg_l = 0;
+
+    /**====---- Header building ----====**/
+    set_msg_header(new_message, MESSAGE_MAGIC, ACK, msg_l, timestamp);
+}
+
+void build_FIN_msg(Message *new_message, timestamp_t timestamp, balance_t balance) {
+    /**====---- Payload building ----====**/
+    int msg_l = sizeof(balance_t);
+    balance_t *balance_ptr = (balance_t *) new_message->s_payload;
+    *balance_ptr = balance;
 
     /**====---- Header building ----====**/
     set_msg_header(new_message, MESSAGE_MAGIC, ACK, msg_l, timestamp);

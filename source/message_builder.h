@@ -2,6 +2,8 @@
 #define PA1_MESSAGE_BUILDER_H
 
 #include <string.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #include "pa2345.h"
 #include "ipc.h"
@@ -23,6 +25,8 @@ void build_log_received_all_done_msg(Message *new_message, timestamp_t timestamp
 void build_TRANSFER_msg(Message *new_message, timestamp_t timestamp, TransferOrder *transferOrder);
 
 void build_ACK_msg(Message *new_message, timestamp_t timestamp);
+
+void build_FIN_msg(Message *new_message, timestamp_t timestamp, balance_t balance);
 
 void build_STOP_msg(Message *new_message, timestamp_t timestamp);
 
