@@ -78,6 +78,3 @@ void close_logger(struct logger *logger) {
 int write_log(struct logger *logger) {
     return write(logger->file_descriptor, logger->log_buffer, logger->log_length);
 }
-
-
-
