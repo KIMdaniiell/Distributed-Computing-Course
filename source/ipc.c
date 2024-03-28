@@ -152,7 +152,7 @@ int receive_any(void *self, Message *msg) {
             ps_id++;
         } else {
             ps_id = 0;
-            sleep(2);
+            sleep(1);
         }
 
         if (ps_id == receiver_id)
