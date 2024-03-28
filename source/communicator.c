@@ -35,8 +35,6 @@ struct communicator *init_communicator(size_t N) {
             entry->write_fd = pipe_fds_i_to_j[1];
             entry->read_fd = pipe_fds_j_to_i[0];
 
-//            const int flags_i_to_j = fcntl(entry->read_fd, F_GETFL, 0);
-//            fcntl(entry->read_fd, F_SETFL, flags_i_to_j | O_NONBLOCK);
             const int flags_i_to_j_read = fcntl(entry->read_fd, F_GETFL, 0);
             fcntl(entry->read_fd, F_SETFL, flags_i_to_j_read | O_NONBLOCK);
             const int flags_i_to_j_write = fcntl(entry->write_fd, F_GETFL, 0);
@@ -45,8 +43,6 @@ struct communicator *init_communicator(size_t N) {
             entry_reverse->write_fd = pipe_fds_j_to_i[1];
             entry_reverse->read_fd = pipe_fds_i_to_j[0];
 
-//            const int flags_j_to_i = fcntl(entry_reverse->read_fd, F_GETFL, 0);
-//            fcntl(entry_reverse->read_fd, F_SETFL, flags_j_to_i | O_NONBLOCK);
             const int flags_j_to_i_read = fcntl(entry_reverse->read_fd, F_GETFL, 0);
             fcntl(entry_reverse->read_fd, F_SETFL, flags_j_to_i_read | O_NONBLOCK);
             const int flags_j_to_i_write = fcntl(entry_reverse->write_fd, F_GETFL, 0);

@@ -123,7 +123,6 @@ void parent_run(pid_t children_PIDs[]) {
         int child_status = 0;
 
         waitpid(children_PIDs[child_count], &child_status, 0);
-//        printf("Wait [%d] complete\n", children[child_count]);
         printf("[PARENT-wait-complete pid=%d %d/%d]\n", children_PIDs[child_count], child_count + 1, X);
     }
 }
