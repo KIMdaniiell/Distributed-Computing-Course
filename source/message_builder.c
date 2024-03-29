@@ -116,6 +116,31 @@ void build_BALANCE_HISTORY_msg(Message *new_message, timestamp_t timestamp, Bala
 }
 
 
+void build_CS_REQUEST_msg(Message *new_message, timestamp_t timestamp) {
+    /**====---- Payload building ----====**/
+    int msg_l = 0;
+
+    /**====---- Header building ----====**/
+    set_msg_header(new_message, MESSAGE_MAGIC, CS_REQUEST, msg_l, timestamp);
+}
+
+void build_CS_REPLY_msg(Message *new_message, timestamp_t timestamp) {
+    /**====---- Payload building ----====**/
+    int msg_l = 0;
+
+    /**====---- Header building ----====**/
+    set_msg_header(new_message, MESSAGE_MAGIC, CS_REPLY, msg_l, timestamp);
+}
+
+void build_CS_RELEASE_msg(Message *new_message, timestamp_t timestamp) {
+    /**====---- Payload building ----====**/
+    int msg_l = 0;
+
+    /**====---- Header building ----====**/
+    set_msg_header(new_message, MESSAGE_MAGIC, CS_RELEASE, msg_l, timestamp);
+}
+
+
 void set_msg_header(Message *new_message, uint16_t magic, int16_t type, uint16_t payload_len, timestamp_t local_time) {
     new_message->s_header.s_magic = magic;
     new_message->s_header.s_type = type;

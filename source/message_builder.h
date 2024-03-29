@@ -32,4 +32,10 @@ void build_STOP_msg(Message *new_message, timestamp_t timestamp);
 
 void build_BALANCE_HISTORY_msg(Message *new_message, timestamp_t timestamp, BalanceHistory *balanceHistory);
 
+void build_CS_REQUEST_msg(Message *new_message, timestamp_t timestamp);
+
+void build_CS_REPLY_msg(Message *new_message, timestamp_t timestamp);
+
+void build_CS_RELEASE_msg(Message *new_message, timestamp_t timestamp);
+
 #endif //PA1_MESSAGE_BUILDER_H
