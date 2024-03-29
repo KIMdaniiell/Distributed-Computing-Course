@@ -170,9 +170,8 @@ int receive_any(void *self, Message *msg) {
             pipes_to_read--;
 
         if (res_code == 0)
-            return 0;
+            return ps_id;
     }
-    return -1;
 }
 
 
