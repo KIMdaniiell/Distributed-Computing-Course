@@ -9,7 +9,7 @@
 #include "communicator.h"
 #include "logger.h"
 #include "message_builder.h"
-#include "bank_worker.h"
+//#include "bank_worker.h"
 #include "lamport_ipc.h"
 
 

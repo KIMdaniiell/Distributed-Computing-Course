@@ -34,7 +34,13 @@ int decorated_receive(void *self, local_id from, Message *msg, timestamp_t *time
             increment_timestamp(timestamp_ptr);
             return res;
         } else {
-            sleep(1);
+//            usleep(1000 * 300);
+//            struct timespec ts = {
+//                    .tv_sec = 0,
+//                    .tv_nsec = 300000000
+//            };
+//            nanosleep(&ts, NULL);
+//            sleep(0.3);
         }
     }
 }

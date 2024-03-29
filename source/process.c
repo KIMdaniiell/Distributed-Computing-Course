@@ -45,6 +45,7 @@ void set_process_logger() {
 void pre_run() {
     communicator->header.owner_id = process_id;
     optimise_communicator(communicator);
+
     queue = (timestamp_t *) calloc(X + 1, sizeof(timestamp_t));
 }
 
@@ -199,26 +200,10 @@ int release_cs(const void *self) {
 void build_message(int16_t type, Message *message) {
     switch (type) {
         case STARTED:
-            build_log_STARTED_msg(message, timestamp, process_id, 0);
+            build_log_STARTED_msg(message, timestamp, process_id);
             break;
         case DONE:
-            build_log_DONE_msg(message, timestamp, process_id, 0);
-            break;
-        case TRANSFER:
-            printf("[process:build_message] ERROR! NOT-YET-SUPPORTED MESSAGE TYPE (%d)!\n", type);
-            exit(-51);
-            break;
-        case ACK:
-            printf("[process:build_message] ERROR! NOT-YET-SUPPORTED MESSAGE TYPE (%d)!\n", type);
-            exit(-51);
-            break;
-        case STOP:
-            printf("[process:build_message] ERROR! NOT-YET-SUPPORTED MESSAGE TYPE (%d)!\n", type);
-            exit(-51);
-            break;
-        case BALANCE_HISTORY:
-            printf("[process:build_message] ERROR! NOT-YET-SUPPORTED MESSAGE TYPE (%d)!\n", type);
-            exit(-51);
+            build_log_DONE_msg(message, timestamp, process_id);
             break;
         case CS_REQUEST:
             build_CS_REQUEST_msg(message, timestamp);

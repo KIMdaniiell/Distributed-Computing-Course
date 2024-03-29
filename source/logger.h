@@ -8,7 +8,7 @@
 #include <sys/types.h>
 
 #include "pa2345.h"
-#include "banking.h"
+//#include "banking.h"
 #include "common.h"
 
 #define MESSAGE_LENGTH 128
@@ -22,17 +22,15 @@ struct logger {
 
 struct logger *init_logger();
 
-int do_log_started_fmt(struct logger *logger, timestamp_t timestamp, local_id id, balance_t balance);
+int do_log_started_fmt(struct logger *logger, timestamp_t timestamp, local_id id);
 
 int do_log_received_all_started_fmt(struct logger *logger, timestamp_t timestamp, local_id id);
 
-int do_log_done_fmt(struct logger *logger, timestamp_t timestamp, local_id id, balance_t balance);
+int do_log_done_fmt(struct logger *logger, timestamp_t timestamp, local_id id);
 
-int do_log_transfer_out_fmt(struct logger *logger, timestamp_t timestamp, local_id id, local_id target_id,
-                            balance_t balance);
+int do_log_transfer_out_fmt(struct logger *logger, timestamp_t timestamp, local_id id, local_id target_id);
 
-int do_log_transfer_in_fmt(struct logger *logger, timestamp_t timestamp, local_id id, local_id target_id,
-                           balance_t balance);
+int do_log_transfer_in_fmt(struct logger *logger, timestamp_t timestamp, local_id id, local_id target_id);
 
 int do_log_received_all_done_fmt(struct logger *logger, timestamp_t timestamp, local_id id);
 

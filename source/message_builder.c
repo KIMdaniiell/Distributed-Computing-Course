@@ -3,24 +3,24 @@
 void set_msg_header(Message *new_message, uint16_t magic, int16_t type, uint16_t payload_len, timestamp_t local_time);
 
 
-void build_log_STARTED_msg(Message *new_message, timestamp_t timestamp, local_id id, balance_t balance) {
+void build_log_STARTED_msg(Message *new_message, timestamp_t timestamp, local_id id) {
     /**====---- Payload building ----====**/
     int msg_l = sprintf(new_message->s_payload, log_started_fmt,
                         timestamp,
                         id,
                         getpid(), getppid(),
-                        balance);
+                        0);
 
     /**====---- Header building ----====**/
     set_msg_header(new_message, MESSAGE_MAGIC, STARTED, msg_l, timestamp);
 }
 
-void build_log_DONE_msg(Message *new_message, timestamp_t timestamp, local_id id, balance_t balance) {
+void build_log_DONE_msg(Message *new_message, timestamp_t timestamp, local_id id) {
     /**====---- Payload building ----====**/
     int msg_l = sprintf(new_message->s_payload, log_done_fmt,
                         timestamp,
                         id,
-                        balance);
+                        0);
     /**====---- Header building ----====**/
     set_msg_header(new_message, MESSAGE_MAGIC, DONE, msg_l, timestamp);
 }
@@ -67,53 +67,53 @@ void build_log_received_all_done_msg(Message *new_message, timestamp_t timestamp
     new_message->s_header.s_local_time = timestamp;
 }*/
 
-void build_TRANSFER_msg(Message *new_message, timestamp_t timestamp, TransferOrder *transferOrder) {
-    /**====---- Payload building ----====**/
+/*void build_TRANSFER_msg(Message *new_message, timestamp_t timestamp, TransferOrder *transferOrder) {
+    *//**====---- Payload building ----====**//*
     int msg_l = sizeof(TransferOrder);
     TransferOrder *payload = (TransferOrder *) new_message->s_payload;
     payload->s_src = transferOrder->s_src;
     payload->s_dst = transferOrder->s_dst;
     payload->s_amount = transferOrder->s_amount;
 
-    /**====---- Header building ----====**/
+    *//**====---- Header building ----====**//*
     set_msg_header(new_message, MESSAGE_MAGIC, TRANSFER, msg_l, timestamp);
 }
 
 void build_ACK_msg(Message *new_message, timestamp_t timestamp) {
-    /**====---- Payload building ----====**/
+    *//**====---- Payload building ----====**//*
     int msg_l = 0;
 
-    /**====---- Header building ----====**/
+    *//**====---- Header building ----====**//*
     set_msg_header(new_message, MESSAGE_MAGIC, ACK, msg_l, timestamp);
 }
 
 void build_FIN_msg(Message *new_message, timestamp_t timestamp, balance_t balance) {
-    /**====---- Payload building ----====**/
+    *//**====---- Payload building ----====**//*
     int msg_l = sizeof(balance_t);
     balance_t *balance_ptr = (balance_t *) new_message->s_payload;
     *balance_ptr = balance;
 
-    /**====---- Header building ----====**/
+    *//**====---- Header building ----====**//*
     set_msg_header(new_message, MESSAGE_MAGIC, ACK, msg_l, timestamp);
 }
 
 void build_STOP_msg(Message *new_message, timestamp_t timestamp) {
-    /**====---- Payload building ----====**/
+    *//**====---- Payload building ----====**//*
     int msg_l = 0;
 
-    /**====---- Header building ----====**/
+    *//**====---- Header building ----====**//*
     set_msg_header(new_message, MESSAGE_MAGIC, STOP, msg_l, timestamp);
 }
 
 void build_BALANCE_HISTORY_msg(Message *new_message, timestamp_t timestamp, BalanceHistory *balanceHistory) {
-    /**====---- Payload building ----====**/
+    *//**====---- Payload building ----====**//*
     // TODO compute real payload len according to BalanceHistory . s_history_len
     int msg_l = sizeof(BalanceHistory);
     memcpy(new_message->s_payload, balanceHistory, msg_l);
 
-    /**====---- Header building ----====**/
+    *//**====---- Header building ----====**//*
     set_msg_header(new_message, MESSAGE_MAGIC, BALANCE_HISTORY, msg_l, timestamp);
-}
+}*/
 
 
 void build_CS_REQUEST_msg(Message *new_message, timestamp_t timestamp) {

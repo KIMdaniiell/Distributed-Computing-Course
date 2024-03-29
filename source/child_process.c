@@ -1,13 +1,18 @@
 #include "child_process.h"
 
-#define CALL_C 3
+#define CALL_C 5
+
+
+char *loop_operation_msg_buffer;
 
 
 void pre_child_run() {
     pre_run();
+    loop_operation_msg_buffer = calloc(1, MAX_PAYLOAD_LEN);
 }
 
 void post_child_run() {
+    free(loop_operation_msg_buffer);
     post_run();
     printf("%3d: [CHILD #%d] B-BYE PID=[%d]\n", timestamp, process_id, getpid());
     exit(0);
@@ -15,11 +20,11 @@ void post_child_run() {
 
 void child_run(bool mutex_l_is_on) {
     Message *message = (Message *) calloc(1, MAX_MESSAGE_LEN);
-    char *loop_operation_msg_buffer = calloc(1, MAX_PAYLOAD_LEN);
+
 
 
     /**====---- START-messages SEND ----====**/
-    do_log_started_fmt(logger, timestamp, process_id, 0);
+    do_log_started_fmt(logger, timestamp, process_id);
     send_multicast_wrapper(STARTED, message);
 
     /**====---- START-messages RECEIVE ----====**/
@@ -47,16 +52,14 @@ void child_run(bool mutex_l_is_on) {
         }
     }
 
-
     /**====---- DONE-messages SEND ----====**/
     printf("%3d: [CHILD #%d] BYE BYE Im DONE \n", timestamp, process_id);
-    do_log_done_fmt(logger, timestamp, process_id, 0);
+    do_log_done_fmt(logger, timestamp, process_id);
     send_multicast_wrapper(DONE, message);
 
     /**====---- DONE-messages RECEIVE ----====**/
     receive_multicast_wrapper(DONE, message);
     do_log_received_all_done_fmt(logger, timestamp, process_id);
-    free(loop_operation_msg_buffer);
 }
 
 void child_run_full(bool mutex_l_is_on) {

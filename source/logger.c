@@ -10,12 +10,12 @@ struct logger *init_logger() {
     return logger;
 }
 
-int do_log_started_fmt(struct logger *logger, timestamp_t timestamp, local_id id, balance_t balance) {
+int do_log_started_fmt(struct logger *logger, timestamp_t timestamp, local_id id) {
     logger->log_length = sprintf(logger->log_buffer, log_started_fmt,
                                  timestamp,
                                  id,
                                  getpid(), getppid(),
-                                 balance);
+                                 0);
 
     return write_log(logger);
 }
@@ -28,32 +28,30 @@ int do_log_received_all_started_fmt(struct logger *logger, timestamp_t timestamp
     return write_log(logger);
 }
 
-int do_log_done_fmt(struct logger *logger, timestamp_t timestamp, local_id id, balance_t balance) {
+int do_log_done_fmt(struct logger *logger, timestamp_t timestamp, local_id id) {
     logger->log_length = sprintf(logger->log_buffer, log_done_fmt,
                                  timestamp,
                                  id,
-                                 balance);
+                                 0);
 
     return write_log(logger);
 }
 
-int do_log_transfer_out_fmt(struct logger *logger, timestamp_t timestamp, local_id id, local_id target_id,
-                            balance_t balance) {
+int do_log_transfer_out_fmt(struct logger *logger, timestamp_t timestamp, local_id id, local_id target_id) {
     logger->log_length = sprintf(logger->log_buffer, log_transfer_out_fmt,
                                  timestamp,
                                  id,
-                                 balance,
+                                 0,
                                  target_id);
 
     return write_log(logger);
 }
 
-int do_log_transfer_in_fmt(struct logger *logger, timestamp_t timestamp, local_id id, local_id target_id,
-                           balance_t balance) {
+int do_log_transfer_in_fmt(struct logger *logger, timestamp_t timestamp, local_id id, local_id target_id) {
     logger->log_length = sprintf(logger->log_buffer, log_transfer_in_fmt,
                                  timestamp,
                                  id,
-                                 balance,
+                                 0,
                                  target_id);
 
     return write_log(logger);

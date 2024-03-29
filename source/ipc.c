@@ -5,8 +5,12 @@
 #include <stdlib.h>
 
 
+#include <unistd.h>
+#include <time.h>
+
 #include "ipc.h"
 #include "communicator.h"
+
 
 /** Send a message to the process specified by id.
  *
@@ -141,6 +145,7 @@ int receive(void *self, local_id from, Message *msg) {
 int receive_any(void *self, Message *msg) {
     struct communicator *communicator = (struct communicator *) self;
 
+
     int N = communicator->header.N;
     int receiver_id = communicator->header.owner_id;
     int pipes_to_read = N - 1;
@@ -152,7 +157,13 @@ int receive_any(void *self, Message *msg) {
             ps_id++;
         } else {
             ps_id = 0;
-            sleep(1);
+//            usleep(1000 * 300);
+//            struct timespec ts = {
+//                    .tv_sec = 0,
+//                    .tv_nsec = 300000000
+//            };
+//            nanosleep(&ts, NULL);
+//            sleep(0.3);
         }
 
         if (ps_id == receiver_id)

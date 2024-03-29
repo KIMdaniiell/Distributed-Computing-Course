@@ -11,10 +11,10 @@ void post_parent_run() {
 }
 
 void parent_run(pid_t children_PIDs[]) {
-//    Message *message = (Message *) calloc(1, MAX_MESSAGE_LEN);
+    Message *message = (Message *) calloc(1, MAX_MESSAGE_LEN);
 
     /**====---- START-messages RECEIVE ----====**/
-//    receive_multicast_wrapper(STARTED, message);
+    receive_multicast_wrapper(STARTED, message);
 
     /**====---- DONE-messages RECEIVE ----====**/
 //    receive_multicast_wrapper(DONE, message);
@@ -32,43 +32,4 @@ void parent_run_full(pid_t children_PIDs[]) {
     pre_parent_run();
     parent_run(children_PIDs);
     post_parent_run();
-}
-
-void transfer(void *parent_data, local_id src, local_id dst, balance_t amount) {
-    printf("[PARENT] Transferring %d -> %d\n", src, dst);
-    Message *message;
-
-    /**====---- Init variables ----====**/
-    message = parent_data;
-    TransferOrder transferOrder = {
-            .s_src = src,
-            .s_dst = dst,
-            .s_amount = amount
-    };
-
-    /**====---- Build Message ----====**/
-    build_TRANSFER_msg(message, timestamp, &transferOrder);
-
-    /**====---- TRANSFER Message SEND ----====**/
-    decorated_send(communicator, src, message, &timestamp);
-
-    /**====---- ACK Message RECEIVE ----====**/
-    int res;
-    for (;;) {
-        res = decorated_receive(communicator, dst, message, &timestamp);
-
-        if (res == 0) {
-            /*printf("[id = %d] [from = %d] [code = %d] [c_N = %d]\n",
-                   PARENT_ID , dst,
-                   res,
-                   communicator->header.N);*/
-            TransferOrder *receive_transferOrder = (TransferOrder *) message->s_payload;
-            printf("[PARENT] got-TRANSFER-message %d -> %d ACKNOWLEDGE\n",
-                   receive_transferOrder->s_src,
-                   receive_transferOrder->s_dst);
-            break;
-        } else {
-            sleep(1);
-        }
-    }
 }

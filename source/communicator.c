@@ -11,16 +11,16 @@ struct communicator *init_communicator(size_t N) {
 
 
     for (int i = 0; i < N; i++) {
-//        printf(" %d)", i);
+        printf(" %d)", i);
         for (int j = 0; j < N; j++) {
             if (i == j) {
-//                printf("     [READ=__;WRITE=__]");
+                printf("     [READ=__;WRITE=__]");
                 continue;
             }
 
             if (i > j) {
-//                struct entry *entry = &entries[i * N + j];
-//                printf("     [READ=%2d;WRITE=%2d]", entry->read_fd, entry->write_fd);
+                struct entry *entry = &entries[i * N + j];
+                printf("     [READ=%2d;WRITE=%2d]", entry->read_fd, entry->write_fd);
                 continue;
             }
 
@@ -48,7 +48,7 @@ struct communicator *init_communicator(size_t N) {
             const int flags_j_to_i_write = fcntl(entry_reverse->write_fd, F_GETFL, 0);
             fcntl(entry_reverse->write_fd, F_SETFL, flags_j_to_i_write | O_NONBLOCK);
 
-//            printf("     [READ=%2d;WRITE=%2d]", entry->read_fd, entry->write_fd);
+            printf("     [READ=%2d;WRITE=%2d]", entry->read_fd, entry->write_fd);
 
             char message[128];
             int msg_len = sprintf(message, "%d/%d\n", pipe_fds_i_to_j[0], pipe_fds_i_to_j[1]);
@@ -57,7 +57,7 @@ struct communicator *init_communicator(size_t N) {
             msg_len = sprintf(message, "%d/%d\n", pipe_fds_j_to_i[0], pipe_fds_j_to_i[1]);
             write(fd_pipes_log, message, msg_len);
         }
-//        printf("\n");
+        printf("\n");
     }
 
     close(fd_pipes_log);

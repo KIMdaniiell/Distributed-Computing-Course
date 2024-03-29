@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 #include "ipc.h"
-#include "banking.h"
+//#include "banking.h"
 
 
 #include "parent_process.h"
@@ -56,7 +56,9 @@ int main(int argc, char **argv) {
         pid = fork();
         if (pid == 0) {
             /* Потомок */
+
             set_local_id(child_local_id);
+
             child_run_full(mutex_l_is_on);
         }
         printf("[main] Creating child №%d (pid = %d)\n", child_local_id, pid);
@@ -64,6 +66,7 @@ int main(int argc, char **argv) {
     }
 
     /* Родитель */
+
     set_local_id(PARENT_ID);
     parent_run_full(children_PIDs);
 
