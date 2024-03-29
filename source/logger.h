@@ -38,4 +38,8 @@ int do_log_received_all_done_fmt(struct logger *logger, timestamp_t timestamp, l
 
 void close_logger(struct logger *logger);
 
+
+char* get_msg_type_name(struct logger* logger, MessageType type);
+
+
 #endif //PA1_MESSAGES_H

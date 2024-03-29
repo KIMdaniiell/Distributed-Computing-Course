@@ -11,7 +11,7 @@ struct logger *init_logger() {
 }
 
 int do_log_started_fmt(struct logger *logger, timestamp_t timestamp, local_id id, balance_t balance) {
-    logger->log_length = sprintf(logger->log_buffer,log_started_fmt,
+    logger->log_length = sprintf(logger->log_buffer, log_started_fmt,
                                  timestamp,
                                  id,
                                  getpid(), getppid(),
@@ -77,4 +77,40 @@ void close_logger(struct logger *logger) {
 
 int write_log(struct logger *logger) {
     return write(logger->file_descriptor, logger->log_buffer, logger->log_length);
+}
+
+
+char *get_msg_type_name(struct logger *logger, MessageType type) {
+    char *buffer = logger->log_buffer;
+
+    switch (type) {
+        case STARTED:
+            sprintf(buffer, "STARTED");
+            break;
+        case DONE:
+            sprintf(buffer, "DONE");
+            break;
+        case ACK:
+            sprintf(buffer, "ACK");
+            break;
+        case STOP:
+            sprintf(buffer, "STOP");
+            break;
+        case TRANSFER:
+            sprintf(buffer, "TRANSFER");
+            break;
+        case BALANCE_HISTORY:
+            sprintf(buffer, "BALANCE_HISTORY");
+            break;
+        case CS_REQUEST:
+            sprintf(buffer, "CS_REQUEST");
+            break;
+        case CS_REPLY:
+            sprintf(buffer, "CS_REPLY");
+            break;
+        case CS_RELEASE:
+            sprintf(buffer, "CS_RELEASE");
+            break;
+    }
+    return buffer;
 }
