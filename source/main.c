@@ -25,9 +25,7 @@
 #define S_MAX_VALUE 99                  ///< Максимальное значение начального баланса
 
 
-int get_optc(int argc, char **argv, balance_t **optv_ptr);
-
-balance_t *get_optv(int optind, int optc, char **argv);
+int handle_opt(int argc, char **argv, bool *mutex_l_is_on);
 
 
 int N;      ///< Общее число процессов
@@ -38,11 +36,12 @@ int main(int argc, char **argv) {
     printf("=========================THE BEGINNING=========================\n");
 
     /**====---- Command-line argument parsing ----====**/
-    balance_t *initial_bank_accounts = NULL;
-    X = get_optc(argc, argv, &initial_bank_accounts);
+    bool mutex_l_is_on;
+    X =  handle_opt(argc, argv, &mutex_l_is_on);
     N = X + 1;
     printf("[main] Параметр N (общее число процессов) равен %d\n", N);
     printf("[main] Параметр X (число дочерних процессов) равен %d\n", X);
+    printf("[main] Параметр mutexl %s\n", mutex_l_is_on ? "АКТИВЕН" : "НЕ_АКТИВЕН");
 
     /**====---- Init process utils ----====**/
     set_process_communicator();
@@ -58,7 +57,7 @@ int main(int argc, char **argv) {
         if (pid == 0) {
             /* Потомок */
             set_local_id(child_local_id);
-            child_run_full(initial_bank_accounts[child_count]);
+            child_run_full(mutex_l_is_on);
         }
         printf("[main] Creating child №%d (pid = %d)\n", child_local_id, pid);
         children_PIDs[child_count] = pid;
@@ -68,81 +67,34 @@ int main(int argc, char **argv) {
     set_local_id(PARENT_ID);
     parent_run_full(children_PIDs);
 
-    free(initial_bank_accounts);
-
     printf("============================THE END============================\n");
 }
 
+/**====---- Process command line options ----====**/
+int handle_opt(int argc, char **argv, bool *mutex_l_is_on) {
+    *mutex_l_is_on = false;
+    int ps_count = -1;
+    struct option long_options[] = {
+            {"mutexl", 0, 0, 0},
+    };
 
-/**====---- Getting bank accounts count ----====**/
-int get_optc(int argc, char **argv, balance_t **optv_ptr) {
-    char *opts = "p:";                  ///< список доступных опций
-    int opt;                            ///< каждая следующая опция попадает сюда
-    int optc = -1;
+    int opt = -1;
+    int opt_id = -1;
 
-    while (-1 != (opt = getopt(argc, argv, opts))) {
+    while (-1 != (opt = getopt_long(argc, argv, "p:", long_options, &opt_id))) {
         switch (opt) {
-            case 'p':                   ///< если опция -p, преобразуем строку с аргументом в число
-                optc = atoi(optarg);
+            case 0:
+//                printf ("параметр %s\n", long_options[opt_id].name);
+                *mutex_l_is_on = true;
+                break;
+            case 'p':
+//                printf("«option 'p' selected, value %d»\n", atoi(optarg));
+                ps_count = atoi(optarg);
                 break;
             default:
+                printf("«something selected\n»");
                 break;
         }
     }
-
-    if (optc < 1) {
-        printf("[main:get_opt_C] Необходимо указать аргумент -p \n");
-        exit(-1);
-    }
-
-    if (optc > argc - 3) {
-        printf("[main:get_opt_C] Параметр optc = %d некорректный! (optc > argc - 3)\n",
-               optc);
-        exit(-1);
-    }
-
-    if (optc < X_MIN_VALUE) {
-        printf("[main:get_opt_C] Параметр optc = %d невалидный! (< X_MIN_VALUE = %d)\n",
-               optc, X_MIN_VALUE);
-        exit(-1);
-    }
-
-    if (optc > X_MAX_VALUE) {
-        printf("[main:get_opt_C] Параметр optc = %d невалидный! (> X_MAX_VALUE = %d)\n",
-               optc, X_MAX_VALUE);
-        exit(-1);
-    }
-
-    printf("[main:get_opt_C] Параметр optc равен %d\n", optc);
-
-    *optv_ptr = get_optv(optind, optc, argv);
-
-    return optc;
-}
-
-/**====---- Getting bank accounts values ----====**/
-balance_t *get_optv(int optind, int optc, char **argv) {
-    balance_t *optv = calloc(optc, sizeof(balance_t));
-
-    for (int i = 0; i < optc; i++) {
-        int raw_opt_value = atoi(argv[optind + i]);
-
-        if (raw_opt_value < S_MIN_VALUE) {
-            printf("[main:get_opt_V] Параметр S[%d] = %d невалидный! (< S_MIN_VALUE = %d)\n",
-                   i, raw_opt_value, S_MIN_VALUE);
-            exit(-1);
-        }
-
-        if (raw_opt_value > S_MAX_VALUE) {
-            printf("[main:get_opt_V] Параметр S[%d] = %d невалидный! (> S_MAX_VALUE = %d)\n",
-                   i, raw_opt_value, S_MAX_VALUE);
-            exit(-1);
-        }
-
-        optv[i] = (balance_t) raw_opt_value;
-
-        printf("[main:get_opt_V] \t%d) %d\n", i, optv[i]);
-    }
-
-    return optv;
+    return ps_count;
 }
